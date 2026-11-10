@@ -273,9 +273,9 @@
           <div class="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300 shrink-0">
             <i data-lucide="clock" class="w-4 h-4"></i>
           </div>
-          <div class="min-w-0">
-            <div class="text-[10px] text-slate-400 font-bold" id="todayDateHeaderLabel">今日のスケジュール</div>
-            <div class="text-xs font-black text-white truncate" id="todayShiftSummaryText">読み込み中...</div>
+          <div class="min-w-0 space-y-1">
+            <div class="text-[10px] text-slate-400 font-bold" id="todayDateHeaderLabel">今日・明日のスケジュール</div>
+            <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-black text-white" id="todayShiftSummaryText">読み込み中...</div>
           </div>
         </div>
         <button onclick="jumpToCurrentShiftMonth()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 text-[10px] font-bold shrink-0 border border-slate-700">
@@ -284,7 +284,7 @@
       </section>
 
       <!-- 3. Interactive Shift Calendar Grid -->
-      <section class="glass-panel rounded-2xl p-3.5 border border-slate-800 space-y-3">
+      <section class="glass-panel rounded-2xl p-3 border border-slate-800 space-y-2.5">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
             <span class="text-xs font-black text-white" id="calendarGridMonthTitle">2026年11月 カレンダー</span>
@@ -292,12 +292,12 @@
           </div>
         </div>
 
-        <!-- Legend -->
-        <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
-          <span class="px-2 py-0.5 rounded-md bg-purple-500/25 border border-purple-400/40 text-purple-200 font-bold">🟣 両方(Wワーク)</span>
-          <span class="px-2 py-0.5 rounded-md bg-sky-500/25 border border-sky-400/40 text-sky-200 font-bold">🔵 本業のみ</span>
-          <span class="px-2 py-0.5 rounded-md bg-orange-500/25 border border-orange-400/40 text-orange-200 font-bold">🟠 バイトのみ</span>
-          <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 font-bold">🟢 完全休み</span>
+        <!-- Legend (Simplified to Blue Main, Orange Part-time, and Simple Off text) -->
+        <div class="flex flex-wrap items-center gap-2 text-[10px] bg-slate-900/70 px-2.5 py-1.5 rounded-xl border border-slate-800/80">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-500/25 border border-sky-400/50 text-sky-200 font-black">🔵 本業</span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-orange-500/25 border border-orange-400/50 text-orange-200 font-black">🟠 バイト</span>
+          <span class="inline-flex items-center px-1.5 py-0.5 text-slate-400 font-bold">休み（文字のみ）</span>
+          <span class="text-[9px] text-slate-400 ml-auto">※Wワーク日は青・橙両方表示</span>
         </div>
 
         <!-- Day of Week Header (Sun - Sat) -->
@@ -863,21 +863,24 @@
 
       <!-- Quick Shift Type Selection Buttons -->
       <div class="grid grid-cols-2 gap-2 text-xs">
-        <button type="button" onclick="applyDayShiftOverride('both')" class="p-3 rounded-xl bg-purple-950/60 hover:bg-purple-900/70 border border-purple-500/50 text-purple-200 font-black flex flex-col items-center gap-1 transition">
-          <span class="text-base">🟣 両方出勤</span>
-          <span class="text-[10px] text-purple-300/80 font-normal">本業夜勤 ＋ 早朝バイト</span>
+        <button type="button" onclick="applyDayShiftOverride('both')" class="p-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-black flex flex-col items-center justify-center gap-1.5 transition">
+          <div class="flex items-center gap-1">
+            <span class="px-1.5 py-0.5 rounded bg-sky-500/30 border border-sky-400/50 text-sky-200 text-[10px] font-black">🔵本業</span>
+            <span class="px-1.5 py-0.5 rounded bg-orange-500/30 border border-orange-400/50 text-orange-200 text-[10px] font-black">🟠バイト</span>
+          </div>
+          <span class="text-[10px] text-slate-300 font-bold">両方出勤（Wワーク）</span>
         </button>
-        <button type="button" onclick="applyDayShiftOverride('main')" class="p-3 rounded-xl bg-sky-950/60 hover:bg-sky-900/70 border border-sky-500/50 text-sky-200 font-black flex flex-col items-center gap-1 transition">
-          <span class="text-base">🔵 本業のみ</span>
+        <button type="button" onclick="applyDayShiftOverride('main')" class="p-3 rounded-xl bg-sky-950/60 hover:bg-sky-900/70 border border-sky-500/50 text-sky-200 font-black flex flex-col items-center justify-center gap-1 transition">
+          <span class="px-2 py-0.5 rounded bg-sky-500/30 border border-sky-400/50 text-sky-200 text-xs font-black">🔵 本業のみ</span>
           <span class="text-[10px] text-sky-300/80 font-normal">19:00〜5:30 夜勤のみ</span>
         </button>
-        <button type="button" onclick="applyDayShiftOverride('part')" class="p-3 rounded-xl bg-orange-950/60 hover:bg-orange-900/70 border border-orange-500/50 text-orange-200 font-black flex flex-col items-center gap-1 transition">
-          <span class="text-base">🟠 バイトのみ</span>
+        <button type="button" onclick="applyDayShiftOverride('part')" class="p-3 rounded-xl bg-orange-950/60 hover:bg-orange-900/70 border border-orange-500/50 text-orange-200 font-black flex flex-col items-center justify-center gap-1 transition">
+          <span class="px-2 py-0.5 rounded bg-orange-500/30 border border-orange-400/50 text-orange-200 text-xs font-black">🟠 バイトのみ</span>
           <span class="text-[10px] text-orange-300/80 font-normal">6:00〜10:00 早朝のみ</span>
         </button>
-        <button type="button" onclick="applyDayShiftOverride('off')" class="p-3 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/70 border border-emerald-500/50 text-emerald-200 font-black flex flex-col items-center gap-1 transition">
-          <span class="text-base">🟢 完全休み</span>
-          <span class="text-[10px] text-emerald-300/80 font-normal">本業もバイトもOFF</span>
+        <button type="button" onclick="applyDayShiftOverride('off')" class="p-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-black flex flex-col items-center justify-center gap-1 transition">
+          <span class="text-sm font-black text-slate-300">休み</span>
+          <span class="text-[10px] text-slate-400 font-normal">本業もバイトもOFF</span>
         </button>
       </div>
 
@@ -2151,17 +2154,26 @@ self.addEventListener('fetch', (event) => {
       const tomInfo = getShiftForDate(tomorrow);
       const dowNames = ['日', '月', '火', '水', '木', '金', '土'];
 
-      const describeShift = (info) => {
-        if (info.type === 'both') return '🟣 本業(19:00-)＆早朝バイト(6:00-)';
-        if (info.type === 'main') return '🔵 本業夜勤のみ(19:00-5:30)';
-        if (info.type === 'part') return '🟠 早朝バイトのみ(6:00-10:00)';
-        return '🟢 完全お休み✨';
+      const describeShiftBadges = (info) => {
+        const badges = [];
+        if (info.hasMain) {
+          badges.push(`<span class="px-1.5 py-0.5 rounded bg-sky-500/25 border border-sky-400/50 text-sky-200 text-[10px] font-black">🔵本業</span>`);
+        }
+        if (info.hasPart) {
+          badges.push(`<span class="px-1.5 py-0.5 rounded bg-orange-500/25 border border-orange-400/50 text-orange-200 text-[10px] font-black">🟠バイト</span>`);
+        }
+        if (badges.length === 0) {
+          badges.push(`<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold">休み</span>`);
+        }
+        return badges.join(' ');
       };
 
       document.getElementById('todayDateHeaderLabel').textContent =
         `今日 ${now.getMonth()+1}/${now.getDate()}(${dowNames[now.getDay()]}) ＆ 明日 ${tomorrow.getMonth()+1}/${tomorrow.getDate()}(${dowNames[tomorrow.getDay()]})`;
-      document.getElementById('todayShiftSummaryText').textContent =
-        `今日: ${describeShift(todayInfo)} ／ 明日: ${describeShift(tomInfo)}`;
+      document.getElementById('todayShiftSummaryText').innerHTML =
+        `<span class="inline-flex items-center gap-1"><span class="text-slate-400 text-[10px]">今日:</span>${describeShiftBadges(todayInfo)}</span>` +
+        `<span class="text-slate-600">／</span>` +
+        `<span class="inline-flex items-center gap-1"><span class="text-slate-400 text-[10px]">明日:</span>${describeShiftBadges(tomInfo)}</span>`;
 
       // Render Monthly Calendar Grid for (y, m)
       document.getElementById('calendarGridMonthTitle').textContent = `${y}年${m}月 カレンダー`;
@@ -2176,7 +2188,7 @@ self.addEventListener('fetch', (event) => {
 
       // Leading empty cells
       for (let i = 0; i < startDow; i++) {
-        html += `<div class="h-16 rounded-xl bg-slate-950/40 border border-slate-900/50"></div>`;
+        html += `<div class="min-h-[76px] rounded-xl bg-slate-950/40 border border-slate-900/50"></div>`;
       }
 
       for (let d = 1; d <= daysInMonth; d++) {
@@ -2187,26 +2199,38 @@ self.addEventListener('fetch', (event) => {
         const isToday = info.dateKey === todayKey;
         const inCutoffPeriod = curDate >= summary.start && curDate <= summary.end;
 
-        let badgeClass = '';
-        let badgeText = '';
+        let badgesHtml = '';
         let subWageText = '';
 
-        if (info.type === 'both') {
-          badgeClass = 'bg-purple-500/25 border-purple-400/50 text-purple-200';
-          badgeText = '🟣両方';
+        if (info.hasMain && info.hasPart) {
+          badgesHtml = `
+            <div class="w-full flex flex-col gap-0.5">
+              <div class="w-full py-0.5 rounded bg-sky-500/25 border border-sky-400/50 text-sky-200 text-[9px] font-black leading-none text-center whitespace-nowrap">🔵本業</div>
+              <div class="w-full py-0.5 rounded bg-orange-500/25 border border-orange-400/50 text-orange-200 text-[9px] font-black leading-none text-center whitespace-nowrap">🟠バイト</div>
+            </div>
+          `;
           subWageText = `+${formatYen(calcSinglePartShiftWage(isHol))}`;
-        } else if (info.type === 'main') {
-          badgeClass = 'bg-sky-500/20 border-sky-400/40 text-sky-200';
-          badgeText = '🔵本業';
+        } else if (info.hasMain) {
+          badgesHtml = `
+            <div class="w-full flex flex-col justify-center flex-1">
+              <div class="w-full py-1 rounded bg-sky-500/25 border border-sky-400/50 text-sky-200 text-[9px] font-black leading-none text-center whitespace-nowrap">🔵本業</div>
+            </div>
+          `;
           subWageText = '夜勤';
-        } else if (info.type === 'part') {
-          badgeClass = 'bg-orange-500/25 border-orange-400/50 text-orange-200';
-          badgeText = '🟠バイト';
+        } else if (info.hasPart) {
+          badgesHtml = `
+            <div class="w-full flex flex-col justify-center flex-1">
+              <div class="w-full py-1 rounded bg-orange-500/25 border border-orange-400/50 text-orange-200 text-[9px] font-black leading-none text-center whitespace-nowrap">🟠バイト</div>
+            </div>
+          `;
           subWageText = `+${formatYen(calcSinglePartShiftWage(isHol))}`;
         } else {
-          badgeClass = 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300';
-          badgeText = '🟢休み';
-          subWageText = 'OFF';
+          badgesHtml = `
+            <div class="w-full flex flex-col justify-center items-center flex-1">
+              <span class="text-[11px] font-bold text-slate-400 whitespace-nowrap">休み</span>
+            </div>
+          `;
+          subWageText = '';
         }
 
         let dateNumColor = 'text-slate-200';
@@ -2218,15 +2242,13 @@ self.addEventListener('fetch', (event) => {
           : (inCutoffPeriod ? 'bg-slate-900/90 border-slate-800' : 'bg-slate-950/70 border-slate-900 opacity-65');
 
         html += `
-          <button type="button" onclick="openDayShiftModal('${info.dateKey}')" class="h-16 p-1 rounded-xl border ${ringClass} flex flex-col justify-between items-center active:scale-95 transition relative">
+          <button type="button" onclick="openDayShiftModal('${info.dateKey}')" class="min-h-[76px] p-1 rounded-xl border ${ringClass} flex flex-col justify-between items-center active:scale-95 transition relative">
             <div class="w-full flex items-center justify-between px-0.5">
-              <span class="text-[11px] font-black ${dateNumColor}">${d}</span>
+              <span class="text-[11px] font-black leading-none ${dateNumColor}">${d}</span>
               ${info.isOverride ? `<span class="w-1.5 h-1.5 rounded-full bg-amber-400" title="スポット変更済"></span>` : ''}
             </div>
-            <div class="w-full px-0.5 py-0.5 rounded border text-[9px] font-black leading-tight truncate ${badgeClass}">
-              ${badgeText}
-            </div>
-            <div class="text-[8px] font-bold ${info.hasPart ? 'text-amber-300' : 'text-slate-500'} leading-none pb-0.5">
+            ${badgesHtml}
+            <div class="h-2.5 flex items-center justify-center text-[8px] font-bold ${info.hasPart ? 'text-amber-300' : 'text-slate-500'} leading-none">
               ${subWageText}
             </div>
           </button>
@@ -2295,7 +2317,7 @@ self.addEventListener('fetch', (event) => {
         showToast(`${dateKey} を基本シフト（自動）に戻しました`, 'info');
       } else {
         appState.shiftConfig.overrides[dateKey] = type;
-        const labels = { both: '🟣両方出勤', main: '🔵本業のみ', part: '🟠バイトのみ', off: '🟢完全休み' };
+        const labels = { both: '🔵本業＋🟠バイト', main: '🔵本業のみ', part: '🟠バイトのみ', off: '休み' };
         showToast(`${dateKey} を【${labels[type]}】に変更しました`, 'success');
       }
 

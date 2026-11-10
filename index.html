@@ -5,9 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>人生再建＆未来ダッシュボード</title>
 
-  <!-- アプリアイコン設定（ホーム画面追加用 🎯アイコン内蔵） -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%230f172a'/><stop offset='1' stop-color='%233b82f6'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><text x='50' y='54' font-size='55' text-anchor='middle' dominant-baseline='middle'>🌸</text></svg>">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%230f172a'/><stop offset='1' stop-color='%233b82f6'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><text x='50' y='54' font-size='55' text-anchor='middle' dominant-baseline='middle'>🌸</text></svg>">
+  <!-- PWA / フル画面アプリ化メタタグ設定 -->
+  <meta name="theme-color" content="#090d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="人生再建">
+
+  <!-- アプリアイコン設定（🎯アイコン内蔵） -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%230f172a'/><stop offset='1' stop-color='%233b82f6'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><text x='50' y='54' font-size='55' text-anchor='middle' dominant-baseline='middle'>🎯</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%230f172a'/><stop offset='1' stop-color='%233b82f6'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><text x='50' y='54' font-size='55' text-anchor='middle' dominant-baseline='middle'>🎯</text></svg>">
+
+  <!-- Web App Manifest（同階層のmanifest.jsonを参照＋JSで動的フォールバック） -->
+  <link rel="manifest" id="pwaManifestLink" href="manifest.json">
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -56,11 +66,10 @@
       transition: width 0.65s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .glass-panel {
-      background: rgba(17, 24, 39, 0.82);
+      background: rgba(17, 24, 39, 0.85);
       backdrop-filter: blur(14px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    /* Hide number input arrows on mobile */
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
       -webkit-appearance: none;
@@ -79,21 +88,33 @@
   <!-- Sticky Compact App Header -->
   <header class="sticky top-0 z-30 glass-panel border-b border-slate-800/80 px-3.5 py-2.5">
     <div class="flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 min-w-0">
         <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
           <span class="text-base leading-none">🎯</span>
         </div>
-        <div>
-          <h1 class="text-sm font-black tracking-tight text-white leading-tight">人生再建ダッシュボード</h1>
-          <p class="text-[10px] text-amber-300/90 font-bold" id="headerSubStatus">月20.6万円攻撃で13ヶ月完済へ</p>
+        <div class="truncate">
+          <h1 class="text-sm font-black tracking-tight text-white leading-tight truncate">人生再建ダッシュボード</h1>
+          <p class="text-[10px] text-amber-300/90 font-bold truncate" id="headerSubStatus">月20.6万円攻撃で13ヶ月完済へ</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Native PWA Install Button (Appears automatically when installable) -->
+        <button onclick="triggerPwaInstall()" id="nativeInstallBtn" class="hidden items-center gap-1 text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md transition">
+          <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+          <span>アプリ化</span>
+        </button>
+
+        <!-- PWA Guide Shortcut Button -->
+        <button onclick="openPwaModal()" class="p-1.5 rounded-lg bg-slate-800/80 active:bg-slate-700 text-sky-400 border border-sky-500/30 transition" title="アプリとして保存する方法">
+          <i data-lucide="download-cloud" class="w-4 h-4"></i>
+        </button>
+
         <button onclick="undoLastAction()" id="undoBtn" class="hidden items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-800 active:bg-slate-700 text-amber-300 border border-amber-500/30 transition">
           <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
           <span>戻す</span>
         </button>
+
         <button onclick="openResetModal()" class="p-1.5 rounded-lg bg-slate-800/80 active:bg-red-950/60 text-slate-400 hover:text-red-300 border border-slate-700/80 transition" title="初期状態に戻す">
           <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
         </button>
@@ -143,7 +164,7 @@
           <div class="bg-slate-900/90 backdrop-blur-md p-3 rounded-xl border border-slate-700/80 space-y-2">
             <div class="flex items-center justify-between gap-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800">
               <button onclick="switchGoalMode('high')" id="goalBtnHigh" class="flex-1 py-1 px-2 rounded-md text-[11px] font-black transition bg-amber-500 text-slate-950 shadow">
-                🔥 高金利ゼロ (13ヶ月)
+                🔥 高金利ゼロ (12〜13ヶ月)
               </button>
               <button onclick="switchGoalMode('all')" id="goalBtnAll" class="flex-1 py-1 px-2 rounded-md text-[11px] font-bold transition text-slate-400 hover:text-white">
                 🚗 車含む完全無借金 (18ヶ月)
@@ -230,7 +251,7 @@
     </div>
 
     <!-- ================================================== -->
-    <!-- TAB 2: 📈 昇給＆未来（モチベ＆5万バッファ管理）      -->
+    <!-- TAB 2: 📈 昇給＆5万枠（＋誕生日・特別支出メモ欄）     -->
     <!-- ================================================== -->
     <div id="tab-future" class="hidden space-y-4">
 
@@ -270,9 +291,9 @@
           <div>
             <span class="text-xs font-black text-amber-300 flex items-center gap-1.5">
               <i data-lucide="shield-heart" class="w-4 h-4"></i>
-              交際・防衛バッファ管理（月5万円枠）
+              交際・防衛バッファ貯金箱（月5万円枠）
             </span>
-            <p class="text-[10px] text-slate-400 mt-0.5">彼女とのデート代＋車の税金・保険をまとめた安心枠</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">毎月の5万枠で余った分をプールしてイベントや税金に備える</p>
           </div>
           <span id="bufferSafetyBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
             積立中
@@ -317,35 +338,55 @@
             <i data-lucide="edit-3" class="w-3.5 h-3.5"></i><span>直接入力</span>
           </button>
         </div>
+      </section>
 
-        <!-- Annual Planned Expenses Memo -->
-        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/90 space-y-1.5 text-[11px]">
-          <div class="font-bold text-slate-300 flex items-center justify-between">
-            <span>📌 月5万円（年60万円）の内訳目安</span>
-            <span class="text-emerald-400 font-bold">デート代 月平均4.2万OK</span>
+      <!-- 3. NEW: 🎁 誕生日・特別支出＆イベントメモ欄 -->
+      <section class="glass-panel rounded-2xl p-4 border border-pink-500/40 space-y-3.5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-xs font-black text-pink-300 flex items-center gap-1.5">
+              <i data-lucide="gift" class="w-4 h-4"></i>
+              🎁 彼女の誕生日・特別支出メモ帳
+            </h3>
+            <p class="text-[10px] text-slate-400 mt-0.5">大事な予定やプレゼント案、税金・パーマ代をメモして管理✨</p>
           </div>
-          <div class="grid grid-cols-2 gap-1.5 text-[10px] text-slate-400 pt-1">
-            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
-              <div class="text-amber-300 font-bold">🚗 3月：自動車任意保険</div>
-              <div>年払い 約25,000円</div>
-            </div>
-            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
-              <div class="text-amber-300 font-bold">🚗 5月：自動車税</div>
-              <div>年払い 約45,000円</div>
-            </div>
-            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
-              <div class="text-pink-300 font-bold">🎂 彼女のお誕生日・記念日</div>
-              <div>プール分から優先してお祝い✨</div>
-            </div>
-            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
-              <div class="text-sky-300 font-bold">✂️ パーマ代（3〜4ヶ月毎）</div>
-              <div>差額 約7,000円×年3〜4回</div>
-            </div>
+          <button onclick="openEventModal()" class="px-2.5 py-1.5 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 font-black text-[11px] flex items-center gap-1 transition shrink-0">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>予定追加</span>
+          </button>
+        </div>
+
+        <!-- Summary Bar: Upcoming Expenses vs Buffer Pool -->
+        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 grid grid-cols-2 gap-2 text-[11px]">
+          <div>
+            <div class="text-slate-400 text-[10px]">未完了の予定合計</div>
+            <div id="specialEventsTotalText" class="text-sm font-black text-pink-300">107,000 円</div>
           </div>
+          <div class="text-right">
+            <div class="text-slate-400 text-[10px]">プール残高との差額</div>
+            <div id="specialEventsDiffText" class="text-sm font-black text-amber-300">あと 107,000円</div>
+          </div>
+        </div>
+
+        <!-- Event Items List -->
+        <div id="specialEventsListContainer" class="space-y-2">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- Free Memo Pad for Gift Ideas / Notes -->
+        <div class="pt-1 space-y-1.5">
+          <div class="flex items-center justify-between text-[11px]">
+            <label for="freeGiftMemoInput" class="font-bold text-slate-300 flex items-center gap-1">
+              <i data-lucide="notebook-pen" class="w-3.5 h-3.5 text-pink-400"></i>
+              <span>プレゼント候補・特別支出フリーメモ</span>
+            </label>
+            <span id="memoSavedIndicator" class="text-[10px] text-emerald-400 opacity-0 transition-opacity">自動保存済✓</span>
+          </div>
+          <textarea id="freeGiftMemoInput" rows="3" oninput="handleFreeMemoInput(this.value)" placeholder="例：彼女の誕生日プレゼント候補、行きたいお店、記念日の予算調整メモなど自由に記入..." class="w-full p-2.5 rounded-xl bg-slate-900/95 border border-slate-700/90 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-pink-500 leading-relaxed"></textarea>
         </div>
       </section>
 
-      <!-- 3. Interest Wasted Visualization -->
+      <!-- 4. Interest Wasted Visualization -->
       <section class="glass-panel rounded-2xl p-4 border border-rose-500/30 space-y-2">
         <div class="flex items-center justify-between">
           <span class="text-xs font-black text-rose-300 flex items-center gap-1.5">
@@ -370,11 +411,29 @@
     </div>
 
     <!-- ================================================== -->
-    <!-- TAB 3: 💰 収支ベース＆履歴                          -->
+    <!-- TAB 3: 💰 収支ベース＆履歴＆アプリ化設定              -->
     <!-- ================================================== -->
     <div id="tab-budget" class="hidden space-y-4">
 
-      <!-- 1. Monthly Cashflow Baseline (Updated with 50,000 combined buffer) -->
+      <!-- 1. PWA App Installation Banner -->
+      <section class="glass-panel rounded-2xl p-4 border border-sky-500/40 bg-sky-950/20 space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-300 shrink-0">
+              <i data-lucide="smartphone" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-xs font-black text-white">📲 Chromeで「アプリとして保存」する設定</h3>
+              <p class="text-[10px] text-slate-300">アドレスバーを消して本物のアプリとしてインストール</p>
+            </div>
+          </div>
+          <button onclick="openPwaModal()" class="px-3 py-1.5 rounded-xl bg-sky-500 text-slate-950 font-black text-[11px] shrink-0 shadow">
+            手順＆ファイル
+          </button>
+        </div>
+      </section>
+
+      <!-- 2. Monthly Cashflow Baseline (Updated with 50,000 combined buffer) -->
       <section class="glass-panel rounded-2xl p-4 border border-slate-700/80 space-y-3">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
           <div>
@@ -454,7 +513,7 @@
         </div>
       </section>
 
-      <!-- 2. Repayment History Log -->
+      <!-- 3. Repayment History Log & Backup Restore -->
       <section class="glass-panel rounded-2xl p-4 border border-slate-800 space-y-3">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2">
           <h3 class="text-xs font-black text-white flex items-center gap-1.5">
@@ -464,14 +523,21 @@
           <span id="logCountBadge" class="text-[11px] text-slate-400">0 件</span>
         </div>
 
-        <div id="actionLogContainer" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+        <div id="actionLogContainer" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
 
-        <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
-          <button onclick="exportBackupJson()" class="text-amber-400 hover:underline font-bold flex items-center gap-1">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i>データバックアップ保存
-          </button>
+        <!-- Backup Export & Import -->
+        <div class="pt-2.5 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+          <div class="flex items-center gap-3">
+            <button onclick="exportBackupJson()" class="text-amber-400 hover:underline font-bold flex items-center gap-1">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>バックアップ保存
+            </button>
+            <label for="importBackupInput" class="cursor-pointer text-sky-400 hover:underline font-bold flex items-center gap-1">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>データ復元
+            </label>
+            <input type="file" id="importBackupInput" accept=".json" class="hidden" onchange="importBackupJson(event)">
+          </div>
           <button onclick="openResetModal()" class="text-slate-400 hover:text-red-400 font-semibold flex items-center gap-1">
-            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>初期状態にリセット
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>初期化
           </button>
         </div>
       </section>
@@ -490,12 +556,12 @@
         <span class="text-[11px]">🎯 討伐リスト</span>
       </button>
       <button onclick="switchMainTab('future')" id="navBtn-future" class="flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 hover:text-slate-200 font-bold transition">
-        <i data-lucide="trending-up" class="w-5 h-5 mb-0.5"></i>
-        <span class="text-[11px]">📈 昇給＆5万枠</span>
+        <i data-lucide="gift" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[11px]">📈 昇給＆特別支出</span>
       </button>
       <button onclick="switchMainTab('budget')" id="navBtn-budget" class="flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 hover:text-slate-200 font-bold transition">
         <i data-lucide="wallet" class="w-5 h-5 mb-0.5"></i>
-        <span class="text-[11px]">💰 収支＆履歴</span>
+        <span class="text-[11px]">💰 収支＆アプリ化</span>
       </button>
     </div>
   </nav>
@@ -594,7 +660,7 @@
         <h3 class="text-sm font-black text-white">初期状態に戻しますか？</h3>
       </div>
       <p class="text-xs text-slate-300 leading-relaxed">
-        入力した返済記録をリセットし、初期残高（高金利計 2,287,618円＋車 1,443,171円）に戻します。（※設定した背景写真は消えません）
+        入力した返済記録をリセットし、初期残高（高金利計 2,287,618円＋車 1,443,171円）に戻します。（※設定した背景写真や特別支出メモは保持されます）
       </p>
       <div class="flex justify-end gap-2 pt-1">
         <button onclick="closeResetModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold">
@@ -619,6 +685,112 @@
       <div class="flex justify-end gap-2 pt-1">
         <button onclick="document.getElementById('bufferModal').classList.replace('flex', 'hidden')" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold">キャンセル</button>
         <button onclick="saveBufferDirect()" class="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-black">更新する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: Add / Edit Special Event Expense Modal -->
+  <div id="eventModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="glass-panel max-w-sm w-full rounded-2xl p-5 border border-pink-500/40 shadow-2xl space-y-3.5">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-black text-white flex items-center gap-1.5">
+          <i data-lucide="gift" class="w-4 h-4 text-pink-400"></i>
+          <span id="eventModalTitle">特別支出・イベント予定の追加</span>
+        </h3>
+        <button onclick="closeEventModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="editEventId">
+
+      <div class="space-y-2.5 text-xs">
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">イベント・支出タイトル</label>
+          <input type="text" id="eventTitleInput" placeholder="例：彼女の誕生日プレゼント＆ディナー" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold focus:outline-none focus:border-pink-500">
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">時期・日付メモ</label>
+            <input type="text" id="eventDateInput" placeholder="例：〇月〇日 / 来年3月" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold focus:outline-none focus:border-pink-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">予算目安（円）</label>
+            <input type="number" id="eventAmountInput" placeholder="30000" min="0" step="1000" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold focus:outline-none focus:border-pink-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">詳細メモ（プレゼント案・支払い方法など）</label>
+          <input type="text" id="eventNoteInput" placeholder="例：5万枠のプールから優先して出す！" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-pink-500">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button onclick="closeEventModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold">
+          キャンセル
+        </button>
+        <button onclick="saveSpecialEvent()" class="px-4 py-2 rounded-xl bg-pink-500 text-slate-950 text-xs font-black">
+          保存する
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: PWA Native App Install Helper Modal -->
+  <div id="pwaModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="glass-panel max-w-md w-full rounded-2xl p-5 border border-sky-500/40 shadow-2xl space-y-4 max-h-[88vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-black text-white flex items-center gap-1.5">
+          <i data-lucide="smartphone" class="w-4 h-4 text-sky-400"></i>
+          <span>Chromeで「アプリとして保存」する方法</span>
+        </h3>
+        <button onclick="closePwaModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="text-xs text-slate-300 space-y-3 leading-relaxed">
+        <div class="p-3 rounded-xl bg-sky-950/40 border border-sky-500/30 space-y-1.5">
+          <div class="font-black text-sky-300">💡 なぜ「ウェブページ」になってしまうのか？</div>
+          <p class="text-[11px] text-slate-300">
+            AndroidのChromeで「ショートカット」ではなく<strong>「アプリをインストール（アドレスバーなしの独立アプリ）」</strong>として認識させるには、GitHubの <code class="text-amber-300 font-bold">index.html</code> と同じ場所に、以下の2つの小さな設定ファイルを置くだけでOKです！
+          </p>
+        </div>
+
+        <!-- Step 1: Download 2 files -->
+        <div class="bg-slate-900/95 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+          <div class="font-black text-white text-xs">手順①：下の2つのボタンで設定ファイルを保存</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="downloadManifestFile()" class="py-2.5 px-3 rounded-xl bg-sky-500 active:bg-sky-400 text-slate-950 font-black text-[11px] flex items-center justify-center gap-1.5 shadow">
+              <i data-lucide="file-json" class="w-4 h-4"></i>
+              <span>manifest.json を保存</span>
+            </button>
+            <button onclick="downloadSwFile()" class="py-2.5 px-3 rounded-xl bg-indigo-500 active:bg-indigo-400 text-white font-black text-[11px] flex items-center justify-center gap-1.5 shadow">
+              <i data-lucide="file-code" class="w-4 h-4"></i>
+              <span>sw.js を保存</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Upload to GitHub -->
+        <div class="bg-slate-900/95 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
+          <div class="font-black text-white text-xs">手順②：GitHubにアップロード</div>
+          <ol class="list-decimal list-inside text-[11px] text-slate-300 space-y-1">
+            <li>今回の新しい <code class="text-amber-300">index.html</code> でGitHubのファイルを更新</li>
+            <li>GitHubの「Add file」➔「Upload files」から、今保存した <code class="text-sky-300">manifest.json</code> と <code class="text-indigo-300">sw.js</code> をアップロードしてCommit！</li>
+            <li>1分待ってChromeでページを再読み込みし、右上の「⋮」メニューを開くと<strong>「📲 アプリをインストール」</strong>に変わります✨</li>
+          </ol>
+        </div>
+
+        <p class="text-[10px] text-slate-400">
+          ※iPhone（Safari）の場合は、この <code class="text-amber-300">index.html</code> だけで既にフル画面アプリ化（ステータスバー透過＆アドレスバー非表示）に対応しています！
+        </p>
+      </div>
+
+      <div class="flex justify-end">
+        <button onclick="closePwaModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold">
+          閉じる
+        </button>
       </div>
     </div>
   </div>
@@ -719,9 +891,46 @@
       }
     ];
 
+    const INITIAL_SPECIAL_EVENTS = [
+      {
+        id: 'ev_gf_birthday',
+        title: '🎂 彼女の誕生日・記念日お祝い',
+        dateText: '最優先イベント✨',
+        amount: 30000,
+        note: '5万枠のプールから最優先でお祝い！足りない月は追加返済を微調整してOK',
+        done: false
+      },
+      {
+        id: 'ev_car_ins',
+        title: '🚗 自動車任意保険（年払い）',
+        dateText: '来年3月頃',
+        amount: 25000,
+        note: '安い保険へ切り替え予定（見積り2〜3万円）',
+        done: false
+      },
+      {
+        id: 'ev_car_tax',
+        title: '🚗 自動車税（年払い）',
+        dateText: '来年5月',
+        amount: 45000,
+        note: '普通車税額。春までにバッファに残しておく',
+        done: false
+      },
+      {
+        id: 'ev_hair_perm',
+        title: '✂️ 散髪パーマ差額（3〜4ヶ月毎）',
+        dateText: '3〜4ヶ月おき',
+        amount: 7000,
+        note: '通常の月3,000円を超えるパーマ月（約1万円）の差額分',
+        done: false
+      }
+    ];
+
     let appState = {
       debts: JSON.parse(JSON.stringify(INITIAL_DEBTS)),
       bufferPool: 0,
+      specialEvents: JSON.parse(JSON.stringify(INITIAL_SPECIAL_EVENTS)),
+      freeGiftMemo: '',
       bgImageDataUrl: null,
       activeTab: 'battle',
       goalMode: 'high',
@@ -731,14 +940,131 @@
           id: Date.now(),
           timestamp: new Date().toLocaleDateString('ja-JP') + ' ' + new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'}),
           type: 'init',
-          text: 'スマホ特化＆月5万バッファ統合版ダッシュボード始動🔥'
+          text: 'PWAアプリ化＆特別支出メモ搭載ダッシュボード始動🔥'
         }
       ],
       previousSnapshot: null
     };
 
     // ==========================================
-    // 2. STATE PERSISTENCE & NAVIGATION
+    // 2. PWA SETUP & FILE GENERATOR
+    // ==========================================
+    let deferredInstallPrompt = null;
+
+    const SVG_ICON_STRING = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f172a"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><rect width="512" height="512" rx="115" fill="url(#g)"/><text x="256" y="275" font-size="280" text-anchor="middle" dominant-baseline="middle">🎯</text></svg>`;
+    const SVG_DATA_URI = `data:image/svg+xml,${encodeURIComponent(SVG_ICON_STRING)}`;
+
+    function getManifestObject() {
+      return {
+        name: "人生再建＆未来ダッシュボード",
+        short_name: "人生再建🎯",
+        description: "1年半で完全無借金を達成し、彼女との未来を掴む専用ダッシュボード",
+        start_url: "./index.html",
+        scope: "./",
+        display: "standalone",
+        orientation: "portrait",
+        background_color: "#090d16",
+        theme_color: "#090d16",
+        icons: [
+          {
+            src: SVG_DATA_URI,
+            sizes: "192x192 512x512",
+            type: "image/svg+xml",
+            purpose: "any maskable"
+          }
+        ]
+      };
+    }
+
+    function initPwaEnvironment() {
+      // Register Service Worker if sw.js exists on GitHub Pages
+      if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {
+          // Fallback: if sw.js is not uploaded yet, dynamically attach manifest data URI
+          const linkEl = document.getElementById('pwaManifestLink');
+          if (linkEl) {
+            const fullManifest = getManifestObject();
+            fullManifest.start_url = location.href;
+            linkEl.setAttribute('href', 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(fullManifest)));
+          }
+        });
+      }
+
+      // Listen for Chrome native install prompt
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const btn = document.getElementById('nativeInstallBtn');
+        if (btn) {
+          btn.classList.remove('hidden');
+          btn.classList.add('flex');
+        }
+      });
+    }
+
+    async function triggerPwaInstall() {
+      if (!deferredInstallPrompt) {
+        openPwaModal();
+        return;
+      }
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('nativeInstallBtn').classList.add('hidden');
+        showToast('アプリとしてインストールを開始しました📲✨', 'success');
+      }
+      deferredInstallPrompt = null;
+    }
+
+    function downloadManifestFile() {
+      const manifestJson = JSON.stringify(getManifestObject(), null, 2);
+      const blob = new Blob([manifestJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'manifest.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('manifest.json を保存しました📥', 'success');
+    }
+
+    function downloadSwFile() {
+      const swCode = `const CACHE_NAME = 'akito-rebuild-pwa-v1';
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', (event) => {
+  event.waitUntil(clients.claim());
+});
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
+});`;
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sw.js';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('sw.js を保存しました📥', 'success');
+    }
+
+    function openPwaModal() {
+      document.getElementById('pwaModal').classList.replace('hidden', 'flex');
+    }
+
+    function closePwaModal() {
+      document.getElementById('pwaModal').classList.replace('flex', 'hidden');
+    }
+
+    // ==========================================
+    // 3. STATE PERSISTENCE & NAVIGATION
     // ==========================================
     function loadState() {
       try {
@@ -749,6 +1075,8 @@
             appState = {
               ...appState,
               ...parsed,
+              specialEvents: Array.isArray(parsed.specialEvents) ? parsed.specialEvents : JSON.parse(JSON.stringify(INITIAL_SPECIAL_EVENTS)),
+              freeGiftMemo: parsed.freeGiftMemo || '',
               expandedDefeatedIds: parsed.expandedDefeatedIds || []
             };
           }
@@ -762,7 +1090,7 @@
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
       } catch (e) {
-        showToast('画像サイズが大きすぎるため保存できませんでした', 'error');
+        showToast('保存容量の上限に達しました', 'error');
       }
     }
 
@@ -770,6 +1098,7 @@
       appState.previousSnapshot = {
         debts: JSON.parse(JSON.stringify(appState.debts)),
         bufferPool: appState.bufferPool,
+        specialEvents: JSON.parse(JSON.stringify(appState.specialEvents)),
         logs: JSON.parse(JSON.stringify(appState.logs))
       };
     }
@@ -778,6 +1107,7 @@
       if (!appState.previousSnapshot) return;
       appState.debts = appState.previousSnapshot.debts;
       appState.bufferPool = appState.previousSnapshot.bufferPool;
+      appState.specialEvents = appState.previousSnapshot.specialEvents;
       appState.logs = appState.previousSnapshot.logs;
       appState.previousSnapshot = null;
       saveState();
@@ -836,7 +1166,7 @@
     }
 
     // ==========================================
-    // 3. RENDERING FUNCTIONS
+    // 4. RENDERING FUNCTIONS
     // ==========================================
     function formatYen(num) {
       return Math.round(num).toLocaleString('ja-JP');
@@ -845,6 +1175,7 @@
     function renderAll() {
       renderHeroVision();
       renderMetricsSection();
+      renderSpecialEventsSection();
       renderDebtCards();
       renderCashflowBaseline();
       renderLogs();
@@ -877,7 +1208,6 @@
         clearBgBtn.classList.add('hidden');
       }
 
-      // Phase 1: High Interest
       const highDebts = appState.debts.filter(d => d.category === 'high');
       const p1Initial = highDebts.reduce((sum, d) => sum + d.initialBalance, 0);
       const p1Remaining = highDebts.reduce((sum, d) => sum + d.currentBalance, 0);
@@ -889,7 +1219,6 @@
       document.getElementById('phase1Remaining').textContent = formatYen(p1Remaining) + '円';
       document.getElementById('phase1Paid').textContent = formatYen(p1Paid) + '円';
 
-      // Phase 2: All Debts
       const p2Initial = appState.debts.reduce((sum, d) => sum + d.initialBalance, 0);
       const p2Remaining = appState.debts.reduce((sum, d) => sum + d.currentBalance, 0);
       const p2Paid = Math.max(0, p2Initial - p2Remaining);
@@ -900,7 +1229,6 @@
       document.getElementById('phase2Remaining').textContent = formatYen(p2Remaining) + '円';
       document.getElementById('phase2Paid').textContent = formatYen(p2Paid) + '円';
 
-      // Dynamic Title
       const activeHighDebts = highDebts.filter(d => d.currentBalance > 0).sort((a,b) => a.priority - b.priority);
       const titleEl = document.getElementById('motivationalTitle');
       if (p2Remaining === 0) {
@@ -932,7 +1260,6 @@
         `).join('');
       }
 
-      // Interest calculations
       const highDebts = appState.debts.filter(d => d.category === 'high');
       const initialMonthlyInterest = highDebts.reduce((sum, d) => sum + Math.floor(d.initialBalance * (d.rate / 100 / 12)), 0);
       const currentMonthlyInterest = highDebts.reduce((sum, d) => sum + Math.floor(d.currentBalance * (d.rate / 100 / 12)), 0);
@@ -943,7 +1270,6 @@
       document.getElementById('dailyInterestCost').textContent = formatYen(dailyInterest);
       document.getElementById('interestSavedAmount').textContent = formatYen(interestSaved) + '円';
 
-      // Buffer Pool
       document.getElementById('bufferPoolDisplay').textContent = formatYen(appState.bufferPool);
       const bufferPct = Math.min(100, (appState.bufferPool / 100000) * 100);
       document.getElementById('bufferProgressBar').style.width = bufferPct + '%';
@@ -961,6 +1287,71 @@
       }
     }
 
+    function renderSpecialEventsSection() {
+      const listEl = document.getElementById('specialEventsListContainer');
+      const totalEl = document.getElementById('specialEventsTotalText');
+      const diffEl = document.getElementById('specialEventsDiffText');
+      const memoEl = document.getElementById('freeGiftMemoInput');
+
+      if (memoEl && memoEl.value !== (appState.freeGiftMemo || '')) {
+        memoEl.value = appState.freeGiftMemo || '';
+      }
+
+      const pendingTotal = appState.specialEvents
+        .filter(ev => !ev.done)
+        .reduce((sum, ev) => sum + (Number(ev.amount) || 0), 0);
+
+      totalEl.textContent = `${formatYen(pendingTotal)} 円`;
+
+      const diff = appState.bufferPool - pendingTotal;
+      if (diff >= 0) {
+        diffEl.textContent = `プール内で完全カバー済 (+${formatYen(diff)}円余り✨)`;
+        diffEl.className = 'text-xs font-black text-emerald-400';
+      } else {
+        diffEl.textContent = `あと ${formatYen(Math.abs(diff))} 円積立で全額カバー`;
+        diffEl.className = 'text-xs font-black text-amber-300';
+      }
+
+      if (appState.specialEvents.length === 0) {
+        listEl.innerHTML = `<p class="text-xs text-slate-500 italic text-center py-3">登録された特別支出予定はありません</p>`;
+        return;
+      }
+
+      listEl.innerHTML = appState.specialEvents.map(ev => `
+        <div class="p-3 rounded-xl bg-slate-900/95 border ${ev.done ? 'border-emerald-500/30 opacity-60' : 'border-slate-800'} flex items-start justify-between gap-2.5 transition">
+          <div class="flex items-start gap-2.5 min-w-0">
+            <button onclick="toggleSpecialEventDone('${ev.id}')" class="mt-0.5 w-5 h-5 rounded-md border ${ev.done ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-600 text-transparent'} flex items-center justify-center shrink-0 transition">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            </button>
+            <div class="min-w-0 space-y-0.5">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="text-xs font-black ${ev.done ? 'line-through text-slate-400' : 'text-white'}">${ev.title}</span>
+                <span class="px-1.5 py-0.5 rounded bg-pink-500/15 border border-pink-500/30 text-pink-300 text-[10px] font-bold">${ev.dateText || '時期未定'}</span>
+              </div>
+              ${ev.note ? `<p class="text-[11px] text-slate-400 leading-snug">${ev.note}</p>` : ''}
+            </div>
+          </div>
+
+          <div class="flex flex-col items-end gap-1 shrink-0">
+            <span class="text-xs font-black ${ev.done ? 'text-slate-500' : 'text-amber-300'}">${formatYen(ev.amount)}円</span>
+            <div class="flex items-center gap-1">
+              ${!ev.done && appState.bufferPool >= ev.amount ? `
+                <button onclick="payEventFromBuffer('${ev.id}')" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-bold" title="バッファから支払って完了にする">
+                  プールから支出
+                </button>
+              ` : ''}
+              <button onclick="openEventModal('${ev.id}')" class="p-1 text-slate-400 hover:text-white" title="編集">
+                <i data-lucide="pencil" class="w-3 h-3"></i>
+              </button>
+              <button onclick="deleteSpecialEvent('${ev.id}')" class="p-1 text-slate-500 hover:text-rose-400" title="削除">
+                <i data-lucide="trash-2" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
     function renderDebtCards() {
       const container = document.getElementById('debtCardsContainer');
       const sortedDebts = [...appState.debts].sort((a, b) => a.priority - b.priority);
@@ -974,7 +1365,6 @@
         const monthlyInterest = Math.floor(debt.currentBalance * (debt.rate / 100 / 12));
         const netPrincipalFromMin = Math.max(0, debt.minPayment - monthlyInterest);
 
-        // COMPACT FOLDED VIEW FOR DEFEATED CARDS (Saves vertical space on mobile!)
         if (isDefeated && !isExpanded) {
           return `
             <div onclick="toggleDefeatedCard('${debt.id}')" class="cursor-pointer glass-panel rounded-xl px-3.5 py-2.5 border border-emerald-500/40 bg-emerald-950/20 flex items-center justify-between transition hover:bg-emerald-950/30">
@@ -1005,8 +1395,6 @@
 
         return `
           <div id="card-${debt.id}" class="glass-panel rounded-2xl p-3.5 border-2 ${cardBorder} space-y-2.5 transition-all duration-300">
-            
-            <!-- Card Top Row -->
             <div class="flex items-start justify-between gap-2">
               <div class="space-y-1">
                 <div class="flex flex-wrap items-center gap-1">
@@ -1027,7 +1415,6 @@
               </button>
             </div>
 
-            <!-- HP Gauge Box -->
             <div class="bg-slate-900/95 p-2.5 rounded-xl border border-slate-800/90 space-y-1.5">
               <div class="flex justify-between items-baseline">
                 <span class="text-[11px] font-bold text-slate-400">残りHP（残高）</span>
@@ -1050,7 +1437,6 @@
               ` : ''}
             </div>
 
-            <!-- Attack Input Controls -->
             ${!isDefeated ? `
               <div class="space-y-1.5 pt-0.5">
                 <div class="flex items-center gap-1.5">
@@ -1074,7 +1460,6 @@
                 </div>
               </div>
             ` : ''}
-
           </div>
         `;
       }).join('');
@@ -1086,7 +1471,6 @@
       const carDebt = appState.debts.find(d => d.category === 'car');
       const activeCarMin = carDebt && carDebt.currentBalance > 0 ? carDebt.minPayment : 0;
 
-      // Income 380,000 - Basic Fixed 87,000 - Combined Dating/Defense Buffer 50,000 = 243,000 available for all debt payments
       const extraAttackPower = 380000 - 87000 - 50000 - activeCarMin - activeHighMin;
       const totalHighAttackPower = activeHighMin + extraAttackPower;
 
@@ -1122,7 +1506,132 @@
     }
 
     // ==========================================
-    // 4. USER ACTIONS & MODALS
+    // 5. SPECIAL EVENTS & MEMO ACTIONS
+    // ==========================================
+    function openEventModal(eventId = null) {
+      const idInput = document.getElementById('editEventId');
+      const titleInput = document.getElementById('eventTitleInput');
+      const dateInput = document.getElementById('eventDateInput');
+      const amountInput = document.getElementById('eventAmountInput');
+      const noteInput = document.getElementById('eventNoteInput');
+      const modalTitle = document.getElementById('eventModalTitle');
+
+      if (eventId) {
+        const ev = appState.specialEvents.find(e => e.id === eventId);
+        if (!ev) return;
+        idInput.value = ev.id;
+        titleInput.value = ev.title;
+        dateInput.value = ev.dateText;
+        amountInput.value = ev.amount;
+        noteInput.value = ev.note || '';
+        modalTitle.textContent = '特別支出・イベント予定の編集';
+      } else {
+        idInput.value = '';
+        titleInput.value = '';
+        dateInput.value = '';
+        amountInput.value = '';
+        noteInput.value = '';
+        modalTitle.textContent = '特別支出・イベント予定の追加';
+      }
+
+      document.getElementById('eventModal').classList.replace('hidden', 'flex');
+    }
+
+    function closeEventModal() {
+      document.getElementById('eventModal').classList.replace('flex', 'hidden');
+    }
+
+    function saveSpecialEvent() {
+      const editId = document.getElementById('editEventId').value;
+      const title = document.getElementById('eventTitleInput').value.trim();
+      const dateText = document.getElementById('eventDateInput').value.trim();
+      const amount = parseInt(document.getElementById('eventAmountInput').value || '0', 10);
+      const note = document.getElementById('eventNoteInput').value.trim();
+
+      if (!title) {
+        showToast('タイトルを入力してください🎁', 'error');
+        return;
+      }
+
+      saveSnapshotForUndo();
+
+      if (editId) {
+        const ev = appState.specialEvents.find(e => e.id === editId);
+        if (ev) {
+          ev.title = title;
+          ev.dateText = dateText || '時期未定';
+          ev.amount = Math.max(0, amount);
+          ev.note = note;
+        }
+      } else {
+        appState.specialEvents.unshift({
+          id: 'ev_' + Date.now(),
+          title: title,
+          dateText: dateText || '時期未定',
+          amount: Math.max(0, amount),
+          note: note,
+          done: false
+        });
+      }
+
+      closeEventModal();
+      saveState();
+      renderAll();
+      showToast('特別支出メモを保存しました🎁', 'success');
+    }
+
+    function toggleSpecialEventDone(eventId) {
+      const ev = appState.specialEvents.find(e => e.id === eventId);
+      if (!ev) return;
+      saveSnapshotForUndo();
+      ev.done = !ev.done;
+      saveState();
+      renderAll();
+    }
+
+    function payEventFromBuffer(eventId) {
+      const ev = appState.specialEvents.find(e => e.id === eventId);
+      if (!ev || ev.done) return;
+
+      saveSnapshotForUndo();
+      appState.bufferPool = Math.max(0, appState.bufferPool - ev.amount);
+      ev.done = true;
+
+      const nowStr = new Date().toLocaleDateString('ja-JP') + ' ' + new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'});
+      appState.logs.push({
+        id: Date.now(),
+        timestamp: nowStr,
+        type: 'edit',
+        text: `🎁 バッファから「${ev.title}」（${formatYen(ev.amount)}円）を支出完了！（プール残: ${formatYen(appState.bufferPool)}円）`
+      });
+
+      saveState();
+      renderAll();
+      showToast(`🎁 ${ev.title}をプール残高から支出完了にしました！`, 'success');
+    }
+
+    function deleteSpecialEvent(eventId) {
+      saveSnapshotForUndo();
+      appState.specialEvents = appState.specialEvents.filter(e => e.id !== eventId);
+      saveState();
+      renderAll();
+      showToast('予定メモを削除しました', 'info');
+    }
+
+    let memoSaveTimer = null;
+    function handleFreeMemoInput(val) {
+      appState.freeGiftMemo = val;
+      saveState();
+      const ind = document.getElementById('memoSavedIndicator');
+      if (ind) {
+        ind.classList.remove('opacity-0');
+        clearTimeout(memoSaveTimer);
+        memoSaveTimer = setTimeout(() => ind.classList.add('opacity-0'), 1500);
+      }
+    }
+
+    // ==========================================
+    // 6. DEBT & BUFFER ACTIONS
     // ==========================================
     function setQuickAttack(debtId, amount, exact = false) {
       const input = document.getElementById(`attack-input-${debtId}`);
@@ -1388,9 +1897,13 @@
 
     function confirmResetAll() {
       const keepBg = appState.bgImageDataUrl;
+      const keepEvents = appState.specialEvents;
+      const keepMemo = appState.freeGiftMemo;
       appState = {
         debts: JSON.parse(JSON.stringify(INITIAL_DEBTS)),
         bufferPool: 0,
+        specialEvents: keepEvents,
+        freeGiftMemo: keepMemo,
         bgImageDataUrl: keepBg,
         activeTab: 'battle',
         goalMode: 'high',
@@ -1424,6 +1937,28 @@
       showToast('バックアップを保存しました💾', 'success');
     }
 
+    function importBackupJson(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported && Array.isArray(imported.debts)) {
+            appState = { ...appState, ...imported };
+            saveState();
+            renderAll();
+            showToast('バックアップデータを復元しました✨', 'success');
+          } else {
+            showToast('無効なバックアップファイルです', 'error');
+          }
+        } catch (err) {
+          showToast('ファイルの読み込みに失敗しました', 'error');
+        }
+      };
+      reader.readAsDataURL ? reader.readAsText(file) : null;
+    }
+
     function triggerCelebrationConfetti() {
       if (typeof confetti === 'function') {
         confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
@@ -1453,6 +1988,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       loadState();
+      initPwaEnvironment();
       switchMainTab(appState.activeTab || 'battle');
       renderAll();
     });

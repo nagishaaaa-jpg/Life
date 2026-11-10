@@ -99,10 +99,10 @@
       </div>
 
       <div class="flex items-center gap-1.5 shrink-0">
-        <!-- Instant Lock Button -->
-        <button onclick="lockAppImmediately()" class="flex items-center gap-1 text-[11px] font-bold px-2 py-1.5 rounded-lg bg-slate-800/90 active:bg-slate-700 text-amber-400 border border-amber-500/30 transition" title="今すぐ画面をロック">
+        <!-- Instant Lock Button / PIN Status Button -->
+        <button onclick="handleHeaderLockButton()" id="headerLockBtn" class="flex items-center gap-1 text-[11px] font-bold px-2 py-1.5 rounded-lg bg-slate-800/90 active:bg-slate-700 text-amber-400 border border-amber-500/30 transition" title="今すぐロック / ロック設定">
           <i data-lucide="lock" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">ロック</span>
+          <span id="headerLockBtnLabel" class="hidden sm:inline">ロック</span>
         </button>
 
         <!-- One-Tap AI Report Copy Button -->
@@ -177,7 +177,7 @@
         </button>
       </div>
       <div id="pinCancelChangeWrap" class="hidden text-center pt-1">
-        <button type="button" onclick="cancelPinChangeFlow()" class="text-xs font-bold text-slate-400 hover:text-white underline">変更をキャンセルして戻る</button>
+        <button type="button" onclick="cancelPinChangeFlow()" class="text-xs font-bold text-slate-400 hover:text-white underline">キャンセルして戻る</button>
       </div>
     </div>
   </div>
@@ -186,9 +186,152 @@
   <main class="px-3.5 pt-3.5 space-y-4">
 
     <!-- ================================================== -->
-    <!-- TAB 1: 🎯 討伐（メイン画面）                        -->
+    <!-- TAB 0 (1画面目・デフォルト): 📅 シフト＆給料計算       -->
     <!-- ================================================== -->
-    <div id="tab-battle" class="space-y-3.5">
+    <div id="tab-shift" class="space-y-3.5">
+
+      <!-- 1. Salary Estimate & Cutoff Switcher Card -->
+      <section class="glass-panel rounded-2xl p-4 border border-amber-500/40 space-y-3 shadow-xl">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-black">
+              <i data-lucide="calculator" class="w-3 h-3"></i>
+              <span>早朝+50円・日祝+100円 自動反映</span>
+            </span>
+            <h2 class="text-sm font-black text-white pt-1" id="shiftPeriodTitle">給料見込み＆シフト管理</h2>
+          </div>
+
+          <button onclick="openShiftConfigModal()" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-300 border border-amber-500/40 text-[11px] font-black flex items-center gap-1 transition shrink-0 shadow">
+            <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
+            <span>基本シフト・時給設定</span>
+          </button>
+        </div>
+
+        <!-- Period Mode Switcher (20日締め vs 1日〜末日) -->
+        <div class="flex items-center gap-1 bg-slate-950/90 p-1 rounded-xl border border-slate-800">
+          <button onclick="setShiftCutoffMode('cutoff20')" id="cutoffBtn20" class="flex-1 py-1.5 px-2 rounded-lg text-[11px] font-black transition bg-amber-500 text-slate-950 shadow">
+            💰 20日締め (前月21〜当月20)
+          </button>
+          <button onclick="setShiftCutoffMode('calendar')" id="cutoffBtnCal" class="flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition text-slate-400 hover:text-white">
+            🗓️ 当月1日〜末日
+          </button>
+        </div>
+
+        <!-- Month Navigation Bar -->
+        <div class="flex items-center justify-between bg-slate-900/95 px-3 py-2 rounded-xl border border-slate-800">
+          <button onclick="changeShiftMonth(-1)" class="p-1.5 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-200 flex items-center gap-1 text-xs font-bold">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            <span>前月</span>
+          </button>
+          <div class="text-center">
+            <div id="shiftTargetMonthLabel" class="text-sm font-black text-white">2026年12月度</div>
+            <div id="shiftTargetRangeLabel" class="text-[10px] text-amber-300 font-bold">対象：11/21(土) 〜 12/20(日) ➔ 1/10支給分</div>
+          </div>
+          <button onclick="changeShiftMonth(1)" class="p-1.5 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-200 flex items-center gap-1 text-xs font-bold">
+            <span>翌月</span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Total Salary Breakdown Box -->
+        <div class="bg-slate-950/90 p-3.5 rounded-xl border border-emerald-500/30 space-y-2.5">
+          <div class="flex items-baseline justify-between border-b border-slate-800/90 pb-2">
+            <span class="text-xs font-bold text-slate-300">💰 期間内の手取り合計見込み</span>
+            <div class="text-right">
+              <span id="shiftTotalTakeHome" class="text-2xl font-black text-emerald-400">380,000</span>
+              <span class="text-xs font-bold text-slate-300 ml-0.5">円</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <!-- Main Job Card -->
+            <div class="bg-slate-900/95 p-2.5 rounded-lg border border-sky-500/30 space-y-0.5">
+              <div class="flex items-center justify-between text-[10px] text-sky-300 font-bold">
+                <span>🌙 本業（夜勤）</span>
+                <span id="shiftMainDaysCount">20日出勤</span>
+              </div>
+              <div class="text-sm font-black text-white" id="shiftMainPayDisplay">300,000 円</div>
+              <div class="text-[9px] text-slate-400">19:00〜5:30 (基本固定給)</div>
+            </div>
+
+            <!-- Part-Time Job Card -->
+            <div class="bg-slate-900/95 p-2.5 rounded-lg border border-orange-500/30 space-y-0.5">
+              <div class="flex items-center justify-between text-[10px] text-orange-300 font-bold">
+                <span>☀️ バイト（早朝）</span>
+                <span id="shiftPartDaysCount">16回 (64h)</span>
+              </div>
+              <div class="text-sm font-black text-amber-300" id="shiftPartPayDisplay">80,800 円</div>
+              <div class="text-[9px] text-slate-400" id="shiftPartSubBreakdown">平日土12回 / 日祝4回</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Today & Tomorrow Quick Action Banner -->
+      <section class="glass-panel rounded-2xl p-3 border border-slate-800 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300 shrink-0">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[10px] text-slate-400 font-bold" id="todayDateHeaderLabel">今日のスケジュール</div>
+            <div class="text-xs font-black text-white truncate" id="todayShiftSummaryText">読み込み中...</div>
+          </div>
+        </div>
+        <button onclick="jumpToCurrentShiftMonth()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 text-[10px] font-bold shrink-0 border border-slate-700">
+          今月へ戻る
+        </button>
+      </section>
+
+      <!-- 3. Interactive Shift Calendar Grid -->
+      <section class="glass-panel rounded-2xl p-3.5 border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-black text-white" id="calendarGridMonthTitle">2026年11月 カレンダー</span>
+            <span class="text-[10px] text-slate-400">（日付タップでスポット変更）</span>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
+          <span class="px-2 py-0.5 rounded-md bg-purple-500/25 border border-purple-400/40 text-purple-200 font-bold">🟣 両方(Wワーク)</span>
+          <span class="px-2 py-0.5 rounded-md bg-sky-500/25 border border-sky-400/40 text-sky-200 font-bold">🔵 本業のみ</span>
+          <span class="px-2 py-0.5 rounded-md bg-orange-500/25 border border-orange-400/40 text-orange-200 font-bold">🟠 バイトのみ</span>
+          <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 font-bold">🟢 完全休み</span>
+        </div>
+
+        <!-- Day of Week Header (Sun - Sat) -->
+        <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-black py-1 bg-slate-900/90 rounded-lg border border-slate-800">
+          <div class="text-rose-400">日</div>
+          <div class="text-slate-300">月</div>
+          <div class="text-slate-300">火</div>
+          <div class="text-slate-300">水</div>
+          <div class="text-slate-300">木</div>
+          <div class="text-slate-300">金</div>
+          <div class="text-sky-400">土</div>
+        </div>
+
+        <!-- Calendar Days Grid -->
+        <div id="shiftCalendarGrid" class="grid grid-cols-7 gap-1">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- Helpful Tip about 20th Cutoff -->
+        <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/90 text-[10px] text-slate-400 flex items-start gap-2 leading-relaxed">
+          <i data-lucide="info" class="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5"></i>
+          <div>
+            <strong class="text-slate-200">平日/土曜バイト：1回 <span id="tipWeekdayPay">4,950</span>円</strong>（6-9時1,250円×3h＋9-10時1,200円×1h）<br>
+            <strong class="text-rose-300">日曜/祝日バイト：1回 <span id="tipHolidayPay">5,350</span>円</strong>（日祝+100円UP自動適用✨）
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ================================================== -->
+    <!-- TAB 1: 🎯 討伐（スノーボール返済画面）               -->
+    <!-- ================================================== -->
+    <div id="tab-battle" class="hidden space-y-3.5">
 
       <!-- 1. Compact Hero Vision Board -->
       <section id="heroVisionBoard" class="relative rounded-2xl overflow-hidden border border-slate-700/80 shadow-xl bg-cover bg-center transition-all duration-300">
@@ -515,36 +658,36 @@
               <h3 class="text-xs font-black text-white">📋 AI報告用・進捗レポート作成</h3>
               <p class="text-[10px] text-slate-300">開始日からの経過日数と各社の返済状況をワンタップでコピー</p>
             </div>
-          </div>
-          <button onclick="copyAiReportAndOpenModal()" class="px-3 py-1.5 rounded-xl bg-emerald-500 active:bg-emerald-400 text-slate-950 font-black text-[11px] shadow flex items-center gap-1 shrink-0">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-            <span>一発コピー</span>
-          </button>
-        </div>
-
-        <div class="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-xl border border-slate-800 text-xs">
+          <div class="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-xl border border-slate-800 text-xs">
           <span class="text-slate-300 font-bold">⏱️ 本格返済スタート日設定</span>
           <input type="date" id="startDateInputBudgetTab" onchange="handleStartDateChange(this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs font-black text-amber-300 focus:outline-none focus:border-amber-400">
         </div>
       </section>
 
-      <!-- 0. Passcode Management Card -->
-      <section class="glass-panel rounded-2xl p-4 border border-amber-500/40 bg-amber-950/15 space-y-2.5">
+      <!-- 0. Passcode Management Card (with ON/OFF Toggle Switch) -->
+      <section class="glass-panel rounded-2xl p-4 border border-amber-500/40 bg-amber-950/15 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 shrink-0">
               <i data-lucide="key-round" class="w-4 h-4"></i>
             </div>
             <div>
-              <h3 class="text-xs font-black text-white">🔐 パスコードロック設定（4桁数字）</h3>
-              <p class="text-[10px] text-slate-300">アプリを開くたびに毎回4桁の暗証番号で保護します</p>
+              <h3 class="text-xs font-black text-white">🔐 パスコードロック設定（ON / OFF）</h3>
+              <p class="text-[10px] text-slate-300" id="pinSettingStatusSub">起動時の4桁パスコード保護を切り替えられます</p>
             </div>
           </div>
-          <div class="flex items-center gap-1.5 shrink-0">
-            <button onclick="startPinChangeFlow()" class="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-black text-[11px] shadow">
-              番号変更
-            </button>
-          </div>
+
+          <!-- ON/OFF Toggle Switch -->
+          <button type="button" onclick="togglePinLockEnabled()" id="pinEnableToggleBtn" class="px-3 py-1.5 rounded-xl font-black text-[11px] transition shadow flex items-center gap-1.5 shrink-0">
+            <span id="pinEnableToggleText">ON</span>
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-xl border border-slate-800 text-xs">
+          <span class="text-slate-400 text-[11px]" id="pinCurrentStateText">現在：起動時に毎回パスコード入力が有効です</span>
+          <button onclick="startPinChangeFlow()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold text-[11px] shrink-0">
+            暗証番号を変更
+          </button>
         </div>
       </section>
 
@@ -680,24 +823,206 @@
   </main>
 
   <!-- ================================================== -->
-  <!-- FIXED BOTTOM NAVIGATION BAR (スマホ片手操作用)       -->
+  <!-- FIXED BOTTOM NAVIGATION BAR (スマホ片手操作・4タブ)   -->
   <!-- ================================================== -->
-  <nav class="fixed bottom-0 left-0 right-0 z-40 max-w-lg mx-auto glass-panel border-t border-slate-800/90 px-2 py-1.5">
-    <div class="grid grid-cols-3 gap-1">
-      <button onclick="switchMainTab('battle')" id="navBtn-battle" class="flex flex-col items-center justify-center py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 font-black transition">
-        <i data-lucide="crosshair" class="w-5 h-5 mb-0.5"></i>
-        <span class="text-[11px]">🎯 討伐リスト</span>
+  <nav class="fixed bottom-0 left-0 right-0 z-40 max-w-lg mx-auto glass-panel border-t border-slate-800/90 px-1.5 py-1.5">
+    <div class="grid grid-cols-4 gap-1">
+      <button onclick="switchMainTab('shift')" id="navBtn-shift" class="flex flex-col items-center justify-center py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 font-black transition">
+        <i data-lucide="calendar-days" class="w-4 h-4 mb-0.5"></i>
+        <span class="text-[10px]">📅 シフト</span>
+      </button>
+      <button onclick="switchMainTab('battle')" id="navBtn-battle" class="flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 hover:text-slate-200 font-bold transition">
+        <i data-lucide="crosshair" class="w-4 h-4 mb-0.5"></i>
+        <span class="text-[10px]">🎯 討伐</span>
       </button>
       <button onclick="switchMainTab('future')" id="navBtn-future" class="flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 hover:text-slate-200 font-bold transition">
-        <i data-lucide="gift" class="w-5 h-5 mb-0.5"></i>
-        <span class="text-[11px]">📈 昇給＆特別支出</span>
+        <i data-lucide="gift" class="w-4 h-4 mb-0.5"></i>
+        <span class="text-[10px]">📈 昇給・予定</span>
       </button>
       <button onclick="switchMainTab('budget')" id="navBtn-budget" class="flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 hover:text-slate-200 font-bold transition">
-        <i data-lucide="wallet" class="w-5 h-5 mb-0.5"></i>
-        <span class="text-[11px]">💰 収支＆アプリ化</span>
+        <i data-lucide="settings" class="w-4 h-4 mb-0.5"></i>
+        <span class="text-[10px]">💰 収支・設定</span>
       </button>
     </div>
   </nav>
+
+  <!-- MODAL 8: Spot Day Shift Edit Modal -->
+  <div id="dayShiftModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="glass-panel max-w-sm w-full rounded-2xl p-5 border border-amber-500/40 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 id="dayShiftModalTitle" class="text-sm font-black text-white">11月21日(土) のシフト変更</h3>
+          <p id="dayShiftModalSub" class="text-[11px] text-slate-400">タップしてこの日の予定をスポット上書き</p>
+        </div>
+        <button onclick="closeDayShiftModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="editingShiftDateKey">
+
+      <!-- Quick Shift Type Selection Buttons -->
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <button type="button" onclick="applyDayShiftOverride('both')" class="p-3 rounded-xl bg-purple-950/60 hover:bg-purple-900/70 border border-purple-500/50 text-purple-200 font-black flex flex-col items-center gap-1 transition">
+          <span class="text-base">🟣 両方出勤</span>
+          <span class="text-[10px] text-purple-300/80 font-normal">本業夜勤 ＋ 早朝バイト</span>
+        </button>
+        <button type="button" onclick="applyDayShiftOverride('main')" class="p-3 rounded-xl bg-sky-950/60 hover:bg-sky-900/70 border border-sky-500/50 text-sky-200 font-black flex flex-col items-center gap-1 transition">
+          <span class="text-base">🔵 本業のみ</span>
+          <span class="text-[10px] text-sky-300/80 font-normal">19:00〜5:30 夜勤のみ</span>
+        </button>
+        <button type="button" onclick="applyDayShiftOverride('part')" class="p-3 rounded-xl bg-orange-950/60 hover:bg-orange-900/70 border border-orange-500/50 text-orange-200 font-black flex flex-col items-center gap-1 transition">
+          <span class="text-base">🟠 バイトのみ</span>
+          <span class="text-[10px] text-orange-300/80 font-normal">6:00〜10:00 早朝のみ</span>
+        </button>
+        <button type="button" onclick="applyDayShiftOverride('off')" class="p-3 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/70 border border-emerald-500/50 text-emerald-200 font-black flex flex-col items-center gap-1 transition">
+          <span class="text-base">🟢 完全休み</span>
+          <span class="text-[10px] text-emerald-300/80 font-normal">本業もバイトもOFF</span>
+        </button>
+      </div>
+
+      <!-- Holiday Flag Toggle for this specific day -->
+      <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+        <div>
+          <div class="font-bold text-rose-300">🎌 祝日・特別時給日（時給+100円UP）</div>
+          <div class="text-[10px] text-slate-400">日曜・祝日は自動でONになります</div>
+        </div>
+        <input type="checkbox" id="dayHolidayCheck" onchange="toggleDayHolidayOverride(this.checked)" class="w-4 h-4 accent-rose-500 rounded cursor-pointer">
+      </div>
+
+      <div class="flex items-center justify-between pt-1">
+        <button type="button" onclick="applyDayShiftOverride('auto')" class="text-xs font-bold text-slate-400 hover:text-amber-300 underline">
+          基本サイクル設定（自動）に戻す
+        </button>
+        <button type="button" onclick="closeDayShiftModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 9: Default Shift Cycle & Wage Configuration Modal -->
+  <div id="shiftConfigModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="glass-panel max-w-md w-full rounded-2xl p-5 border border-amber-500/40 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-black text-white flex items-center gap-1.5">
+          <i data-lucide="settings-2" class="w-4 h-4 text-amber-400"></i>
+          <span>⚙️ 基本シフト＆給料・時給設定</span>
+        </h3>
+        <button onclick="closeShiftConfigModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <p class="text-[11px] text-slate-300 leading-relaxed">
+        ここで設定した基本曜日がカレンダーに自動展開されます。今後シフト曜日や隔週休みが変わっても、いつでもここから変更できます✨
+      </p>
+
+      <!-- 1. Part-Time Basic Days -->
+      <div class="bg-slate-900/95 p-3.5 rounded-xl border border-orange-500/30 space-y-2.5 text-xs">
+        <div class="font-black text-orange-300 flex items-center justify-between">
+          <span>☀️ バイト（6:00〜10:00）の基本出勤曜日</span>
+          <span class="text-[10px] text-slate-400 font-normal">初期：月・木・土・日</span>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center" id="cfgPartDaysGroup">
+          <label class="cursor-pointer"><input type="checkbox" value="0" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-orange-500 peer-checked:text-slate-950 peer-checked:border-orange-400 font-black text-[11px]">日</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="1" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-orange-500 peer-checked:text-slate-950 peer-checked:border-orange-400 font-black text-[11px]">月</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="2" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-orange-500 peer-checked:text-slate-950 peer-checked:border-orange-400 font-black text-[11px]">火</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="3" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-orange-500 peer-checked:text-slate-950 peer-checked:border-orange-400 font-black text-[11px]">水</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="4" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-orange-500 peer-checked:text-slate-950 peer-checked:border-orange-400 font-black text-[11px]">木</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="5" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-orange-500 peer-checked:text-slate-950 peer-checked:border-orange-400 font-black text-[11px]">金</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="6" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-orange-500 peer-checked:text-slate-950 peer-checked:border-orange-400 font-black text-[11px]">土</div></label>
+        </div>
+      </div>
+
+      <!-- 2. Main Job Basic Days + Bi-Weekly Off -->
+      <div class="bg-slate-900/95 p-3.5 rounded-xl border border-sky-500/30 space-y-3 text-xs">
+        <div class="font-black text-sky-300 flex items-center justify-between">
+          <span>🌙 本業（夜勤 19:00〜5:30）の基本出勤曜日</span>
+          <span class="text-[10px] text-slate-400 font-normal">初期：木曜休み＋隔週金曜休み</span>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center" id="cfgMainDaysGroup">
+          <label class="cursor-pointer"><input type="checkbox" value="0" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-sky-500 peer-checked:text-slate-950 peer-checked:border-sky-400 font-black text-[11px]">日</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="1" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-sky-500 peer-checked:text-slate-950 peer-checked:border-sky-400 font-black text-[11px]">月</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="2" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-sky-500 peer-checked:text-slate-950 peer-checked:border-sky-400 font-black text-[11px]">火</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="3" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-sky-500 peer-checked:text-slate-950 peer-checked:border-sky-400 font-black text-[11px]">水</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="4" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-sky-500 peer-checked:text-slate-950 peer-checked:border-sky-400 font-black text-[11px]">木</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="5" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-sky-500 peer-checked:text-slate-950 peer-checked:border-sky-400 font-black text-[11px]">金</div></label>
+          <label class="cursor-pointer"><input type="checkbox" value="6" class="hidden peer"><div class="py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 peer-checked:bg-sky-500 peer-checked:text-slate-950 peer-checked:border-sky-400 font-black text-[11px]">土</div></label>
+        </div>
+
+        <!-- Bi-Weekly Off Setting -->
+        <div class="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] text-slate-400 font-bold mb-1">隔週休みの曜日</label>
+            <select id="cfgBiweeklyDay" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-bold text-xs">
+              <option value="-1">なし（毎週固定）</option>
+              <option value="5">金曜日（隔週休み）</option>
+              <option value="4">木曜日（隔週休み）</option>
+              <option value="6">土曜日（隔週休み）</option>
+              <option value="0">日曜日（隔週休み）</option>
+              <option value="1">月曜日（隔週休み）</option>
+              <option value="2">火曜日（隔週休み）</option>
+              <option value="3">水曜日（隔週休み）</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 font-bold mb-1">隔週サイクルの週合わせ</label>
+            <select id="cfgBiweeklyParity" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-bold text-xs">
+              <option value="0">パターンA（今週休み）</option>
+              <option value="1">パターンB（来週休み）</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Salary & Wage Parameters -->
+      <div class="bg-slate-900/95 p-3.5 rounded-xl border border-emerald-500/30 space-y-2.5 text-xs">
+        <div class="font-black text-emerald-300">💰 本業手取り＆バイト時給・手当設定</div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[10px] text-slate-400 font-bold mb-1">本業 月手取り額（円）</label>
+            <input type="number" id="cfgMainSalary" step="1000" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 font-bold mb-1">バイト基本時給（円）</label>
+            <input type="number" id="cfgPartBaseWage" step="10" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 font-bold mb-1">5〜9時 早朝手当 (+円/h)</label>
+            <input type="number" id="cfgEarlyBonus" step="10" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 font-bold mb-1">日祝手当 (+円/h)</label>
+            <input type="number" id="cfgHolidayBonus" step="10" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 font-bold mb-1">早朝対象時間 (6〜9時=3h)</label>
+            <input type="number" id="cfgEarlyHours" step="0.5" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 font-bold mb-1">通常対象時間 (9〜10時=1h)</label>
+            <input type="number" id="cfgNormalHours" step="0.5" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-1">
+        <button type="button" onclick="clearAllShiftOverrides()" class="text-[11px] font-bold text-rose-400 hover:underline">
+          スポット変更を全てリセット
+        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeShiftConfigModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold">
+            キャンセル
+          </button>
+          <button type="button" onclick="saveShiftConfigModal()" class="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-black shadow-lg">
+            保存して反映✨
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL 1: Monthly Minimum Payment Confirmation -->
   <div id="monthlyModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
@@ -964,16 +1289,89 @@
 
   <script>
     // ==========================================
-    // 0. 4-DIGIT PIN LOCK SYSTEM (Every Launch)
+    // 0. 4-DIGIT PIN LOCK SYSTEM (ON/OFF Toggleable)
     // ==========================================
     const PIN_STORAGE_KEY = 'akito_life_rebuild_pin_v1';
+    const PIN_ENABLED_KEY = 'akito_life_rebuild_pin_enabled_v1';
     let pinMode = 'unlock'; // 'setup_first' | 'setup_confirm' | 'unlock' | 'change_verify' | 'change_new' | 'change_confirm'
     let currentPinInput = '';
     let tempFirstPin = '';
 
-    function initPinLockScreen() {
-      const savedPin = localStorage.getItem(PIN_STORAGE_KEY);
+    function isPinLockEnabled() {
+      const val = localStorage.getItem(PIN_ENABLED_KEY);
+      // Default to true unless explicitly turned off ('false')
+      return val === null ? true : val === 'true';
+    }
+
+    function setPinLockEnabled(enabled) {
+      localStorage.setItem(PIN_ENABLED_KEY, enabled ? 'true' : 'false');
+      renderPinSettingsUI();
+    }
+
+    function renderPinSettingsUI() {
+      const enabled = isPinLockEnabled();
+      const toggleBtn = document.getElementById('pinEnableToggleBtn');
+      const toggleText = document.getElementById('pinEnableToggleText');
+      const stateText = document.getElementById('pinCurrentStateText');
+      const headerLockBtn = document.getElementById('headerLockBtn');
+      const headerLockLabel = document.getElementById('headerLockBtnLabel');
+
+      if (toggleBtn && toggleText && stateText) {
+        if (enabled) {
+          toggleBtn.className = 'px-3.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-[11px] transition shadow flex items-center gap-1.5 shrink-0';
+          toggleText.textContent = '🔒 ロック ON';
+          stateText.textContent = '現在：アプリ起動時に毎回4桁パスコード画面が開きます';
+        } else {
+          toggleBtn.className = 'px-3.5 py-1.5 rounded-xl bg-slate-800 text-slate-400 border border-slate-700 font-bold text-[11px] transition flex items-center gap-1.5 shrink-0';
+          toggleText.textContent = '🔓 ロック OFF';
+          stateText.textContent = '現在：パスコードなしで即座にシフト画面が開きます';
+        }
+      }
+
+      if (headerLockBtn && headerLockLabel) {
+        if (enabled) {
+          headerLockBtn.className = 'flex items-center gap-1 text-[11px] font-bold px-2 py-1.5 rounded-lg bg-slate-800/90 active:bg-slate-700 text-amber-400 border border-amber-500/30 transition';
+          headerLockLabel.textContent = 'ロック';
+        } else {
+          headerLockBtn.className = 'flex items-center gap-1 text-[11px] font-bold px-2 py-1.5 rounded-lg bg-slate-900/80 active:bg-slate-800 text-slate-500 border border-slate-800 transition';
+          headerLockLabel.textContent = 'ロックOFF';
+        }
+      }
+    }
+
+    function togglePinLockEnabled() {
+      const currentlyEnabled = isPinLockEnabled();
+      if (currentlyEnabled) {
+        setPinLockEnabled(false);
+        showToast('🔓 起動時のパスコードロックを【OFF】にしました', 'info');
+      } else {
+        setPinLockEnabled(true);
+        const savedPin = localStorage.getItem(PIN_STORAGE_KEY);
+        if (!savedPin) {
+          initPinLockScreen(true);
+        } else {
+          showToast('🔒 起動時のパスコードロックを【ON】にしました', 'success');
+        }
+      }
+    }
+
+    function handleHeaderLockButton() {
+      if (!isPinLockEnabled()) {
+        setPinLockEnabled(true);
+        showToast('🔒 パスコードロックをONにして画面をロックしました', 'info');
+      }
+      lockAppImmediately();
+    }
+
+    function initPinLockScreen(forceShow = false) {
+      renderPinSettingsUI();
       const overlay = document.getElementById('pinLockOverlay');
+      if (!forceShow && !isPinLockEnabled()) {
+        overlay.classList.add('hidden', 'opacity-0', 'pointer-events-none');
+        return;
+      }
+
+      const savedPin = localStorage.getItem(PIN_STORAGE_KEY);
       const cancelWrap = document.getElementById('pinCancelChangeWrap');
       cancelWrap.classList.add('hidden');
       overlay.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
@@ -1070,6 +1468,7 @@
       } else if (pinMode === 'setup_confirm' || pinMode === 'change_confirm') {
         if (currentPinInput === tempFirstPin) {
           localStorage.setItem(PIN_STORAGE_KEY, currentPinInput);
+          setPinLockEnabled(true);
           unlockOverlaySmoothly();
           showToast('🔐 4桁パスコードを設定しました！', 'success');
         } else {
@@ -1099,11 +1498,12 @@
     }
 
     function lockAppImmediately() {
-      initPinLockScreen();
+      initPinLockScreen(true);
       lucide.createIcons();
     }
 
     function startPinChangeFlow() {
+      const savedPin = localStorage.getItem(PIN_STORAGE_KEY);
       const overlay = document.getElementById('pinLockOverlay');
       const cancelWrap = document.getElementById('pinCancelChangeWrap');
       currentPinInput = '';
@@ -1111,8 +1511,13 @@
       hidePinError();
       updatePinDotsUI();
 
-      pinMode = 'change_verify';
-      setPinScreenLabels('現在のパスコードを入力', '変更するには現在の4桁を入力してください');
+      if (!savedPin) {
+        pinMode = 'change_new';
+        setPinScreenLabels('新しい4桁パスコードを入力', '設定する4桁の数字を入力してください');
+      } else {
+        pinMode = 'change_verify';
+        setPinScreenLabels('現在のパスコードを入力', '変更するには現在の4桁を入力してください');
+      }
       cancelWrap.classList.remove('hidden');
       overlay.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
       lucide.createIcons();
@@ -1136,9 +1541,34 @@
     });
 
     // ==========================================
-    // 1. INITIAL DATA DEFINITION
+    // 1. INITIAL DATA & SHIFT/HOLIDAY DEFINITION
     // ==========================================
     const STORAGE_KEY = 'akito_life_rebuild_dashboard_v1';
+
+    // Japanese Public Holidays (2026 - 2028) for automatic +100 yen/h allowance
+    const JP_HOLIDAYS = new Set([
+      '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06','2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23','2026-10-12','2026-11-03','2026-11-23',
+      '2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-21','2027-03-22','2027-04-29','2027-05-03','2027-05-04','2027-05-05','2027-07-19','2027-08-11','2027-09-20','2027-09-23','2027-10-11','2027-11-03','2027-11-23',
+      '2028-01-01','2028-01-10','2028-02-11','2028-02-23','2028-03-20','2028-04-29','2028-05-03','2028-05-04','2028-05-05','2028-07-17','2028-08-11','2028-09-18','2028-09-22','2028-10-09','2028-11-03','2028-11-23'
+    ]);
+
+    const INITIAL_SHIFT_CONFIG = {
+      mainTakeHome: 300000,
+      partBaseWage: 1200,
+      earlyBonus: 50,      // 5:00-9:00 +50円
+      holidayBonus: 100,   // 日祝 +100円
+      earlyHours: 3,       // 6:00-9:00 (3h)
+      normalHours: 1,      // 9:00-10:00 (1h)
+      partDefaultDays: [0, 1, 4, 6],        // 日(0), 月(1), 木(4), 土(6)
+      mainDefaultDays: [0, 1, 2, 3, 5, 6],  // 木(4)休み、金(5)は隔週休み判定へ
+      mainBiweeklyOffDay: 5,                // 金曜(5)を隔週休みに設定（-1で無効）
+      mainBiweeklyParity: 0,                // 0 or 1 で隔週の週合わせ
+      cutoffMode: 'cutoff20',               // 'cutoff20' (前月21〜当月20) or 'calendar' (1〜末日)
+      viewYear: new Date().getFullYear(),
+      viewMonth: new Date().getMonth() + 1, // 1-12
+      overrides: {},                        // { 'YYYY-MM-DD': 'both' | 'main' | 'part' | 'off' }
+      customHolidays: {}                    // { 'YYYY-MM-DD': true | false }
+    };
 
     const INITIAL_DEBTS = [
       {
@@ -1231,8 +1661,8 @@
       {
         id: 'ev_gf_birthday',
         title: '🎂 彼女の誕生日・記念日お祝い',
-        dateText: '最優先イベント✨',
-        amount: 30000,
+        dateText: '1月給料で絶対用意',
+        amount: 100000,
         note: '5万枠のプールから最優先でお祝い！足りない月は追加返済を微調整してOK',
         done: false
       },
@@ -1269,15 +1699,16 @@
       specialEvents: JSON.parse(JSON.stringify(INITIAL_SPECIAL_EVENTS)),
       freeGiftMemo: '',
       bgImageDataUrl: null,
-      activeTab: 'battle',
+      activeTab: 'shift',
       goalMode: 'high',
       expandedDefeatedIds: [],
+      shiftConfig: JSON.parse(JSON.stringify(INITIAL_SHIFT_CONFIG)),
       logs: [
         {
           id: Date.now(),
           timestamp: new Date().toLocaleDateString('ja-JP') + ' ' + new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'}),
           type: 'init',
-          text: 'PWAアプリ化＆進捗レポートコピー搭載ダッシュボード始動🔥'
+          text: 'シフト＆給料自動計算搭載ダッシュボード始動🔥'
         }
       ],
       previousSnapshot: null
@@ -1415,10 +1846,18 @@ self.addEventListener('fetch', (event) => {
               repaymentStartDate: parsed.repaymentStartDate || '2027-01-10',
               specialEvents: Array.isArray(parsed.specialEvents) ? parsed.specialEvents : JSON.parse(JSON.stringify(INITIAL_SPECIAL_EVENTS)),
               freeGiftMemo: parsed.freeGiftMemo || '',
-              expandedDefeatedIds: parsed.expandedDefeatedIds || []
+              expandedDefeatedIds: parsed.expandedDefeatedIds || [],
+              shiftConfig: {
+                ...JSON.parse(JSON.stringify(INITIAL_SHIFT_CONFIG)),
+                ...(parsed.shiftConfig || {}),
+                overrides: (parsed.shiftConfig && parsed.shiftConfig.overrides) ? parsed.shiftConfig.overrides : {},
+                customHolidays: (parsed.shiftConfig && parsed.shiftConfig.customHolidays) ? parsed.shiftConfig.customHolidays : {}
+              }
             };
           }
         }
+        // Always open on 'shift' tab as the 1st screen on launch!
+        appState.activeTab = 'shift';
       } catch (e) {
         console.error('Failed to load state:', e);
       }
@@ -1507,10 +1946,11 @@ self.addEventListener('fetch', (event) => {
 
     function switchMainTab(tabName) {
       appState.activeTab = tabName;
-      const tabs = ['battle', 'future', 'budget'];
+      const tabs = ['shift', 'battle', 'future', 'budget'];
       tabs.forEach(t => {
         const contentEl = document.getElementById(`tab-${t}`);
         const btnEl = document.getElementById(`navBtn-${t}`);
+        if (!contentEl || !btnEl) return;
         if (t === tabName) {
           contentEl.classList.remove('hidden');
           btnEl.className = 'flex flex-col items-center justify-center py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 font-black transition';
@@ -1521,6 +1961,426 @@ self.addEventListener('fetch', (event) => {
       });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       saveState();
+    }
+
+    // ==========================================
+    // 3.5 SHIFT & SALARY CALCULATION ENGINE
+    // ==========================================
+    function toDateKey(year, month, day) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    function isDateHolidayOrSunday(dateObj, dateKey) {
+      const cfg = appState.shiftConfig;
+      if (cfg.customHolidays && typeof cfg.customHolidays[dateKey] === 'boolean') {
+        return cfg.customHolidays[dateKey];
+      }
+      if (dateObj.getDay() === 0) return true; // Sunday
+      return JP_HOLIDAYS.has(dateKey);
+    }
+
+    function getShiftForDate(dateObj) {
+      const cfg = appState.shiftConfig;
+      const y = dateObj.getFullYear();
+      const m = dateObj.getMonth() + 1;
+      const d = dateObj.getDate();
+      const dateKey = toDateKey(y, m, d);
+      const dow = dateObj.getDay();
+
+      // Check spot override first
+      if (cfg.overrides && cfg.overrides[dateKey]) {
+        const ov = cfg.overrides[dateKey];
+        return {
+          type: ov, // 'both' | 'main' | 'part' | 'off'
+          hasMain: ov === 'both' || ov === 'main',
+          hasPart: ov === 'both' || ov === 'part',
+          isOverride: true,
+          dateKey
+        };
+      }
+
+      // Otherwise compute from default rules
+      const hasPart = Array.isArray(cfg.partDefaultDays) && cfg.partDefaultDays.includes(dow);
+      let hasMain = Array.isArray(cfg.mainDefaultDays) && cfg.mainDefaultDays.includes(dow);
+
+      // Bi-weekly off logic for Main Job
+      if (hasMain && Number(cfg.mainBiweeklyOffDay) === dow) {
+        // Anchor date: 2026-11-01 (Sunday)
+        const anchor = new Date(2026, 10, 1, 0, 0, 0, 0);
+        const target = new Date(y, m - 1, d, 0, 0, 0, 0);
+        const diffDays = Math.floor((target.getTime() - anchor.getTime()) / (1000 * 60 * 60 * 24));
+        const weekIndex = Math.floor(diffDays / 7);
+        const parity = ((weekIndex % 2) + 2) % 2;
+        if (parity === Number(cfg.mainBiweeklyParity)) {
+          hasMain = false;
+        }
+      }
+
+      let type = 'off';
+      if (hasMain && hasPart) type = 'both';
+      else if (hasMain) type = 'main';
+      else if (hasPart) type = 'part';
+
+      return { type, hasMain, hasPart, isOverride: false, dateKey };
+    }
+
+    function calcSinglePartShiftWage(isHolOrSun) {
+      const cfg = appState.shiftConfig;
+      const base = Number(cfg.partBaseWage) || 1200;
+      const earlyB = Number(cfg.earlyBonus) || 50;
+      const holB = isHolOrSun ? (Number(cfg.holidayBonus) || 100) : 0;
+      const earlyH = Number(cfg.earlyHours) ?? 3;
+      const normalH = Number(cfg.normalHours) ?? 1;
+
+      const earlyWage = (base + earlyB + holB) * earlyH;
+      const normalWage = (base + holB) * normalH;
+      return Math.round(earlyWage + normalWage);
+    }
+
+    function getShiftPeriodRange(year, month, cutoffMode) {
+      if (cutoffMode === 'cutoff20') {
+        // Previous month 21st to Target month 20th
+        const start = new Date(year, month - 2, 21, 0, 0, 0, 0);
+        const end = new Date(year, month - 1, 20, 0, 0, 0, 0);
+        return { start, end };
+      } else {
+        // 1st to Last day of Target month
+        const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+        const end = new Date(year, month, 0, 0, 0, 0, 0);
+        return { start, end };
+      }
+    }
+
+    function calculatePeriodSalarySummary(year, month, cutoffMode) {
+      const { start, end } = getShiftPeriodRange(year, month, cutoffMode);
+      const cfg = appState.shiftConfig;
+      const shiftHoursPerDay = (Number(cfg.earlyHours) || 3) + (Number(cfg.normalHours) || 1);
+
+      let mainDays = 0;
+      let partRegularDays = 0;
+      let partHolidayDays = 0;
+      let partTotalPay = 0;
+
+      const cur = new Date(start);
+      while (cur <= end) {
+        const info = getShiftForDate(cur);
+        const isHol = isDateHolidayOrSunday(cur, info.dateKey);
+        if (info.hasMain) mainDays++;
+        if (info.hasPart) {
+          if (isHol) {
+            partHolidayDays++;
+          } else {
+            partRegularDays++;
+          }
+          partTotalPay += calcSinglePartShiftWage(isHol);
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+
+      const partTotalDays = partRegularDays + partHolidayDays;
+      const partTotalHours = partTotalDays * shiftHoursPerDay;
+      const mainPay = Number(cfg.mainTakeHome) || 300000;
+      const totalTakeHome = mainPay + partTotalPay;
+
+      return {
+        start,
+        end,
+        mainDays,
+        partRegularDays,
+        partHolidayDays,
+        partTotalDays,
+        partTotalHours,
+        partTotalPay,
+        mainPay,
+        totalTakeHome
+      };
+    }
+
+    function renderShiftTab() {
+      const cfg = appState.shiftConfig;
+      const y = Number(cfg.viewYear) || new Date().getFullYear();
+      const m = Number(cfg.viewMonth) || (new Date().getMonth() + 1);
+      const mode = cfg.cutoffMode || 'cutoff20';
+
+      // Cutoff Toggle Buttons UI
+      const btn20 = document.getElementById('cutoffBtn20');
+      const btnCal = document.getElementById('cutoffBtnCal');
+      if (btn20 && btnCal) {
+        if (mode === 'cutoff20') {
+          btn20.className = 'flex-1 py-1.5 px-2 rounded-lg text-[11px] font-black transition bg-amber-500 text-slate-950 shadow';
+          btnCal.className = 'flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition text-slate-400 hover:text-white';
+        } else {
+          btnCal.className = 'flex-1 py-1.5 px-2 rounded-lg text-[11px] font-black transition bg-amber-500 text-slate-950 shadow';
+          btn20.className = 'flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition text-slate-400 hover:text-white';
+        }
+      }
+
+      // Calculate Period Salary
+      const summary = calculatePeriodSalarySummary(y, m, mode);
+      const sMonth = summary.start.getMonth() + 1;
+      const sDay = summary.start.getDate();
+      const eMonth = summary.end.getMonth() + 1;
+      const eDay = summary.end.getDate();
+
+      // Next month 10th payday label
+      const payMonth = m === 12 ? 1 : m + 1;
+
+      document.getElementById('shiftTargetMonthLabel').textContent = `${y}年${m}月度`;
+      document.getElementById('shiftTargetRangeLabel').textContent = mode === 'cutoff20'
+        ? `対象：${sMonth}/${sDay} 〜 ${eMonth}/${eDay}（${payMonth}/10 支給分）`
+        : `対象：${y}年${m}月1日 〜 ${m}月${eDay}日（当月1ヶ月分）`;
+
+      document.getElementById('shiftTotalTakeHome').textContent = formatYen(summary.totalTakeHome);
+      document.getElementById('shiftMainDaysCount').textContent = `${summary.mainDays}回出勤`;
+      document.getElementById('shiftMainPayDisplay').textContent = `${formatYen(summary.mainPay)} 円`;
+      document.getElementById('shiftPartDaysCount').textContent = `${summary.partTotalDays}回 (${summary.partTotalHours}h)`;
+      document.getElementById('shiftPartPayDisplay').textContent = `${formatYen(summary.partTotalPay)} 円`;
+
+      const regWage = calcSinglePartShiftWage(false);
+      const holWage = calcSinglePartShiftWage(true);
+      document.getElementById('shiftPartSubBreakdown').textContent =
+        `平日土${summary.partRegularDays}回(${formatYen(regWage)}) / 日祝${summary.partHolidayDays}回(${formatYen(holWage)})`;
+
+      document.getElementById('tipWeekdayPay').textContent = formatYen(regWage);
+      document.getElementById('tipHolidayPay').textContent = formatYen(holWage);
+
+      // Today & Tomorrow Quick Banner
+      const now = new Date();
+      const todayInfo = getShiftForDate(now);
+      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const tomInfo = getShiftForDate(tomorrow);
+      const dowNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+      const describeShift = (info) => {
+        if (info.type === 'both') return '🟣 本業(19:00-)＆早朝バイト(6:00-)';
+        if (info.type === 'main') return '🔵 本業夜勤のみ(19:00-5:30)';
+        if (info.type === 'part') return '🟠 早朝バイトのみ(6:00-10:00)';
+        return '🟢 完全お休み✨';
+      };
+
+      document.getElementById('todayDateHeaderLabel').textContent =
+        `今日 ${now.getMonth()+1}/${now.getDate()}(${dowNames[now.getDay()]}) ＆ 明日 ${tomorrow.getMonth()+1}/${tomorrow.getDate()}(${dowNames[tomorrow.getDay()]})`;
+      document.getElementById('todayShiftSummaryText').textContent =
+        `今日: ${describeShift(todayInfo)} ／ 明日: ${describeShift(tomInfo)}`;
+
+      // Render Monthly Calendar Grid for (y, m)
+      document.getElementById('calendarGridMonthTitle').textContent = `${y}年${m}月 カレンダー`;
+      const gridEl = document.getElementById('shiftCalendarGrid');
+      const firstDay = new Date(y, m - 1, 1);
+      const lastDay = new Date(y, m, 0);
+      const startDow = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
+
+      const todayKey = toDateKey(now.getFullYear(), now.getMonth() + 1, now.getDate());
+      let html = '';
+
+      // Leading empty cells
+      for (let i = 0; i < startDow; i++) {
+        html += `<div class="h-16 rounded-xl bg-slate-950/40 border border-slate-900/50"></div>`;
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const curDate = new Date(y, m - 1, d);
+        const info = getShiftForDate(curDate);
+        const isHol = isDateHolidayOrSunday(curDate, info.dateKey);
+        const dow = curDate.getDay();
+        const isToday = info.dateKey === todayKey;
+        const inCutoffPeriod = curDate >= summary.start && curDate <= summary.end;
+
+        let badgeClass = '';
+        let badgeText = '';
+        let subWageText = '';
+
+        if (info.type === 'both') {
+          badgeClass = 'bg-purple-500/25 border-purple-400/50 text-purple-200';
+          badgeText = '🟣両方';
+          subWageText = `+${formatYen(calcSinglePartShiftWage(isHol))}`;
+        } else if (info.type === 'main') {
+          badgeClass = 'bg-sky-500/20 border-sky-400/40 text-sky-200';
+          badgeText = '🔵本業';
+          subWageText = '夜勤';
+        } else if (info.type === 'part') {
+          badgeClass = 'bg-orange-500/25 border-orange-400/50 text-orange-200';
+          badgeText = '🟠バイト';
+          subWageText = `+${formatYen(calcSinglePartShiftWage(isHol))}`;
+        } else {
+          badgeClass = 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300';
+          badgeText = '🟢休み';
+          subWageText = 'OFF';
+        }
+
+        let dateNumColor = 'text-slate-200';
+        if (dow === 0 || isHol) dateNumColor = 'text-rose-400';
+        else if (dow === 6) dateNumColor = 'text-sky-400';
+
+        const ringClass = isToday
+          ? 'ring-2 ring-amber-400 bg-slate-900'
+          : (inCutoffPeriod ? 'bg-slate-900/90 border-slate-800' : 'bg-slate-950/70 border-slate-900 opacity-65');
+
+        html += `
+          <button type="button" onclick="openDayShiftModal('${info.dateKey}')" class="h-16 p-1 rounded-xl border ${ringClass} flex flex-col justify-between items-center active:scale-95 transition relative">
+            <div class="w-full flex items-center justify-between px-0.5">
+              <span class="text-[11px] font-black ${dateNumColor}">${d}</span>
+              ${info.isOverride ? `<span class="w-1.5 h-1.5 rounded-full bg-amber-400" title="スポット変更済"></span>` : ''}
+            </div>
+            <div class="w-full px-0.5 py-0.5 rounded border text-[9px] font-black leading-tight truncate ${badgeClass}">
+              ${badgeText}
+            </div>
+            <div class="text-[8px] font-bold ${info.hasPart ? 'text-amber-300' : 'text-slate-500'} leading-none pb-0.5">
+              ${subWageText}
+            </div>
+          </button>
+        `;
+      }
+
+      gridEl.innerHTML = html;
+    }
+
+    function setShiftCutoffMode(mode) {
+      appState.shiftConfig.cutoffMode = mode;
+      saveState();
+      renderShiftTab();
+    }
+
+    function changeShiftMonth(delta) {
+      let y = Number(appState.shiftConfig.viewYear) || new Date().getFullYear();
+      let m = Number(appState.shiftConfig.viewMonth) || (new Date().getMonth() + 1);
+      m += delta;
+      if (m > 12) { m = 1; y++; }
+      if (m < 1) { m = 12; y--; }
+      appState.shiftConfig.viewYear = y;
+      appState.shiftConfig.viewMonth = m;
+      saveState();
+      renderShiftTab();
+    }
+
+    function jumpToCurrentShiftMonth() {
+      const now = new Date();
+      appState.shiftConfig.viewYear = now.getFullYear();
+      appState.shiftConfig.viewMonth = now.getMonth() + 1;
+      saveState();
+      renderShiftTab();
+      showToast('今月のカレンダーに戻りました📅', 'info');
+    }
+
+    function openDayShiftModal(dateKey) {
+      const parts = dateKey.split('-').map(Number);
+      const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+      const dowNames = ['日', '月', '火', '水', '木', '金', '土'];
+      const info = getShiftForDate(dateObj);
+      const isHol = isDateHolidayOrSunday(dateObj, dateKey);
+
+      document.getElementById('editingShiftDateKey').value = dateKey;
+      document.getElementById('dayShiftModalTitle').textContent =
+        `${parts[1]}月${parts[2]}日（${dowNames[dateObj.getDay()]}）のシフト変更`;
+      document.getElementById('dayShiftModalSub').textContent =
+        info.isOverride ? '現在：スポット手動変更中' : '現在：基本サイクル自動反映中';
+      document.getElementById('dayHolidayCheck').checked = isHol;
+
+      document.getElementById('dayShiftModal').classList.replace('hidden', 'flex');
+    }
+
+    function closeDayShiftModal() {
+      document.getElementById('dayShiftModal').classList.replace('flex', 'hidden');
+    }
+
+    function applyDayShiftOverride(type) {
+      const dateKey = document.getElementById('editingShiftDateKey').value;
+      if (!dateKey) return;
+
+      if (!appState.shiftConfig.overrides) appState.shiftConfig.overrides = {};
+
+      if (type === 'auto') {
+        delete appState.shiftConfig.overrides[dateKey];
+        showToast(`${dateKey} を基本シフト（自動）に戻しました`, 'info');
+      } else {
+        appState.shiftConfig.overrides[dateKey] = type;
+        const labels = { both: '🟣両方出勤', main: '🔵本業のみ', part: '🟠バイトのみ', off: '🟢完全休み' };
+        showToast(`${dateKey} を【${labels[type]}】に変更しました`, 'success');
+      }
+
+      closeDayShiftModal();
+      saveState();
+      renderShiftTab();
+    }
+
+    function toggleDayHolidayOverride(checked) {
+      const dateKey = document.getElementById('editingShiftDateKey').value;
+      if (!dateKey) return;
+      if (!appState.shiftConfig.customHolidays) appState.shiftConfig.customHolidays = {};
+      appState.shiftConfig.customHolidays[dateKey] = checked;
+      saveState();
+      renderShiftTab();
+    }
+
+    function openShiftConfigModal() {
+      const cfg = appState.shiftConfig;
+
+      // Populate Part-time day checkboxes
+      document.querySelectorAll('#cfgPartDaysGroup input[type="checkbox"]').forEach(cb => {
+        cb.checked = cfg.partDefaultDays.includes(Number(cb.value));
+      });
+
+      // Populate Main job day checkboxes
+      document.querySelectorAll('#cfgMainDaysGroup input[type="checkbox"]').forEach(cb => {
+        cb.checked = cfg.mainDefaultDays.includes(Number(cb.value));
+      });
+
+      document.getElementById('cfgBiweeklyDay').value = String(cfg.mainBiweeklyOffDay ?? 5);
+      document.getElementById('cfgBiweeklyParity').value = String(cfg.mainBiweeklyParity ?? 0);
+
+      document.getElementById('cfgMainSalary').value = cfg.mainTakeHome ?? 300000;
+      document.getElementById('cfgPartBaseWage').value = cfg.partBaseWage ?? 1200;
+      document.getElementById('cfgEarlyBonus').value = cfg.earlyBonus ?? 50;
+      document.getElementById('cfgHolidayBonus').value = cfg.holidayBonus ?? 100;
+      document.getElementById('cfgEarlyHours').value = cfg.earlyHours ?? 3;
+      document.getElementById('cfgNormalHours').value = cfg.normalHours ?? 1;
+
+      document.getElementById('shiftConfigModal').classList.replace('hidden', 'flex');
+    }
+
+    function closeShiftConfigModal() {
+      document.getElementById('shiftConfigModal').classList.replace('flex', 'hidden');
+    }
+
+    function saveShiftConfigModal() {
+      const cfg = appState.shiftConfig;
+
+      const partDays = [];
+      document.querySelectorAll('#cfgPartDaysGroup input[type="checkbox"]').forEach(cb => {
+        if (cb.checked) partDays.push(Number(cb.value));
+      });
+
+      const mainDays = [];
+      document.querySelectorAll('#cfgMainDaysGroup input[type="checkbox"]').forEach(cb => {
+        if (cb.checked) mainDays.push(Number(cb.value));
+      });
+
+      cfg.partDefaultDays = partDays;
+      cfg.mainDefaultDays = mainDays;
+      cfg.mainBiweeklyOffDay = parseInt(document.getElementById('cfgBiweeklyDay').value, 10);
+      cfg.mainBiweeklyParity = parseInt(document.getElementById('cfgBiweeklyParity').value, 10);
+
+      cfg.mainTakeHome = Math.max(0, parseInt(document.getElementById('cfgMainSalary').value || '300000', 10));
+      cfg.partBaseWage = Math.max(0, parseInt(document.getElementById('cfgPartBaseWage').value || '1200', 10));
+      cfg.earlyBonus = Math.max(0, parseInt(document.getElementById('cfgEarlyBonus').value || '50', 10));
+      cfg.holidayBonus = Math.max(0, parseInt(document.getElementById('cfgHolidayBonus').value || '100', 10));
+      cfg.earlyHours = Math.max(0, parseFloat(document.getElementById('cfgEarlyHours').value || '3'));
+      cfg.normalHours = Math.max(0, parseFloat(document.getElementById('cfgNormalHours').value || '1'));
+
+      closeShiftConfigModal();
+      saveState();
+      renderAll();
+      showToast('⚙️ 基本シフト・時給設定を保存しました！', 'success');
+    }
+
+    function clearAllShiftOverrides() {
+      appState.shiftConfig.overrides = {};
+      appState.shiftConfig.customHolidays = {};
+      closeShiftConfigModal();
+      saveState();
+      renderShiftTab();
+      showToast('スポット変更をすべてリセットし、基本設定に戻しました', 'info');
     }
 
     function switchGoalMode(mode) {
@@ -1563,6 +2423,8 @@ self.addEventListener('fetch', (event) => {
     }
 
     function renderAll() {
+      renderPinSettingsUI();
+      renderShiftTab();
       renderHeroVision();
       renderMetricsSection();
       renderSpecialEventsSection();
@@ -2320,6 +3182,9 @@ self.addEventListener('fetch', (event) => {
         ? `\n・フリーメモ：${appState.freeGiftMemo.trim()}`
         : '';
 
+      const shiftCfg = appState.shiftConfig || INITIAL_SHIFT_CONFIG;
+      const shiftSum = calculatePeriodSalarySummary(shiftCfg.viewYear, shiftCfg.viewMonth, shiftCfg.cutoffMode);
+
       return `【🎯 人生再建ダッシュボード進捗報告】
 📅 報告日：${todayStr}時点
 ━━━━━━━━━━━━━━━━━━━━
@@ -2337,6 +3202,9 @@ ${debtLines}
 ・現在の追加返済フリー枠：${formatYen(extraAttackPower)} 円/月
 ・マイカーローン残高：${carDebt ? formatYen(carDebt.currentBalance) : 0} 円
 ・交際・防衛バッファ残高：${formatYen(appState.bufferPool)} 円
+
+■ シフト＆給与見込み（${shiftCfg.viewYear}年${shiftCfg.viewMonth}月度）
+・本業（${shiftSum.mainDays}日）＋バイト（${shiftSum.partTotalDays}回/${shiftSum.partTotalHours}h）：計 ${formatYen(shiftSum.totalTakeHome)} 円（内バイト ${formatYen(shiftSum.partTotalPay)} 円）
 
 ■ 特別支出・直近の予定メモ
 ${eventLines}${freeMemoLine}`;
@@ -2455,6 +3323,7 @@ ${eventLines}${freeMemoLine}`;
       const keepEvents = appState.specialEvents;
       const keepMemo = appState.freeGiftMemo;
       const keepStartDate = appState.repaymentStartDate || '2027-01-10';
+      const keepShiftConfig = appState.shiftConfig || JSON.parse(JSON.stringify(INITIAL_SHIFT_CONFIG));
       appState = {
         debts: JSON.parse(JSON.stringify(INITIAL_DEBTS)),
         repaymentStartDate: keepStartDate,
@@ -2462,9 +3331,10 @@ ${eventLines}${freeMemoLine}`;
         specialEvents: keepEvents,
         freeGiftMemo: keepMemo,
         bgImageDataUrl: keepBg,
-        activeTab: 'battle',
+        activeTab: 'shift',
         goalMode: 'high',
         expandedDefeatedIds: [],
+        shiftConfig: keepShiftConfig,
         logs: [
           {
             id: Date.now(),
@@ -2478,7 +3348,7 @@ ${eventLines}${freeMemoLine}`;
       saveState();
       closeResetModal();
       document.getElementById('monthlyBreakdownAlert').classList.add('hidden');
-      switchMainTab('battle');
+      switchMainTab('shift');
       renderAll();
       showToast('初期状態にリセットしました', 'info');
     }
@@ -2547,7 +3417,7 @@ ${eventLines}${freeMemoLine}`;
       loadState();
       initPwaEnvironment();
       initPinLockScreen();
-      switchMainTab(appState.activeTab || 'battle');
+      switchMainTab('shift');
       renderAll();
     });
   </script>

@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人生再建＆未来ダッシュボード</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Inter"', '"Noto Sans JP"', 'sans-serif'],
+          },
+          keyframes: {
+            pulseGlow: {
+              '0%, 100%': { boxShadow: '0 0 15px rgba(245, 158, 11, 0.3)' },
+              '50%': { boxShadow: '0 0 28px rgba(245, 158, 11, 0.65)' },
+            },
+            damageShake: {
+              '0%, 100%': { transform: 'translateX(0)' },
+              '20%, 60%': { transform: 'translateX(-6px) rotate(-0.5deg)' },
+              '40%, 80%': { transform: 'translateX(6px) rotate(0.5deg)' },
+            }
+          },
+          animation: {
+            'pulse-glow': 'pulseGlow 2.5s infinite',
+            'damage': 'damageShake 0.4s ease-in-out',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #090d16;
+      color: #f1f5f9;
+      overflow-x: hidden;
+    }
+    .hp-bar-transition {
+      transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .glass-panel {
+      background: rgba(17, 24, 39, 0.78);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="min-h-screen pb-20 selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- Top Navigation / App Bar -->
+  <header class="sticky top-0 z-30 glass-panel border-b border-slate-800/80 px-4 py-3">
+    <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+          <i data-lucide="flame" class="w-5 h-5 text-slate-950 fill-slate-950"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2">
+            人生再建＆未来ダッシュボード
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">18ヶ月完済計画</span>
+          </h1>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="undoLastAction()" id="undoBtn" class="hidden items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+          <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
+          <span>1つ戻す</span>
+        </button>
+        <button onclick="openResetModal()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-red-950/60 hover:text-red-300 hover:border-red-800/60 text-slate-400 border border-slate-700/80 transition">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>初期状態に戻す</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 pt-5 space-y-6">
+
+    <!-- 1. HERO VISION BOARD & PROGRESS SECTION -->
+    <section id="heroVisionBoard" class="relative rounded-3xl overflow-hidden border border-slate-700/70 shadow-2xl transition-all duration-500 bg-cover bg-center" style="min-height: 310px;">
+      <!-- Dynamic Background Overlay -->
+      <div id="heroOverlay" class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-900/65"></div>
+
+      <!-- Content Container -->
+      <div class="relative z-10 p-5 sm:p-8 flex flex-col justify-between h-full space-y-6">
+        
+        <!-- Top Row: Motivation & Image Customizer -->
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="space-y-1.5 max-w-xl">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold">
+              <i data-lucide="heart-handshake" class="w-3.5 h-3.5"></i>
+              <span id="motivationalBadge">彼女との未来・結婚に向けた1年半の戦い</span>
+            </div>
+            <h2 id="motivationalTitle" class="text-xl sm:text-3xl font-black text-white tracking-tight leading-snug drop-shadow">
+              1社倒すごとに、毎月の自由と未来が近づく。
+            </h2>
+            <p id="motivationalSub" class="text-xs sm:text-sm text-slate-300 font-medium">
+              まずは第1ターゲット「クレカ キャッシング（74,128円）」を撃破して、最初の月5,000円昇給を掴み取ろう！
+            </p>
+          </div>
+
+          <!-- Background Upload Controls -->
+          <div class="flex items-center gap-2 bg-slate-900/80 backdrop-blur-md p-1.5 rounded-xl border border-slate-700/80">
+            <label for="bgUploadInput" class="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow">
+              <i data-lucide="image-plus" class="w-4 h-4"></i>
+              <span>背景写真を設定</span>
+            </label>
+            <input type="file" id="bgUploadInput" accept="image/*" class="hidden" onchange="handleBgUpload(event)">
+            <button id="clearBgBtn" onclick="clearBgImage()" class="hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="背景画像をリセット">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dual Progress Bars -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          
+          <!-- Phase 1: High-Interest Debt Zero (13 Months Goal) -->
+          <div class="bg-slate-900/85 backdrop-blur-md p-4 rounded-2xl border border-amber-500/30 shadow-lg">
+            <div class="flex justify-between items-baseline mb-1">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-300">第1ゴール：高金利借金ゼロ（目安13ヶ月）</span>
+              </div>
+              <span id="phase1Percent" class="text-xl font-black text-amber-400">0.0%</span>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full h-3.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700 my-2">
+              <div id="phase1Bar" class="h-full bg-gradient-to-r from-amber-500 via-orange-400 to-emerald-400 rounded-full hp-bar-transition" style="width: 0%"></div>
+            </div>
+
+            <div class="flex justify-between items-center text-xs text-slate-300 pt-1">
+              <div>
+                <span class="text-slate-400">残り残高:</span>
+                <strong id="phase1Remaining" class="text-sm sm:text-base font-black text-white ml-1">2,287,618円</strong>
+              </div>
+              <div class="text-right">
+                <span class="text-slate-400">撃破済み:</span>
+                <span id="phase1Paid" class="font-bold text-emerald-400 ml-1">0円</span>
+                <span class="text-slate-500 text-[11px]">/ 2,287,618円</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phase 2: Total Debt Free including Car (18 Months Goal) -->
+          <div class="bg-slate-900/85 backdrop-blur-md p-4 rounded-2xl border border-sky-500/30 shadow-lg">
+            <div class="flex justify-between items-baseline mb-1">
+              <div class="flex items-center gap-1.5">
+                <i data-lucide="car" class="w-3.5 h-3.5 text-sky-400"></i>
+                <span class="text-xs font-bold uppercase tracking-wider text-sky-300">最終ゴール：車含む完全無借金（目安18ヶ月）</span>
+              </div>
+              <span id="phase2Percent" class="text-xl font-black text-sky-400">0.0%</span>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full h-3.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700 my-2">
+              <div id="phase2Bar" class="h-full bg-gradient-to-r from-sky-500 via-indigo-400 to-emerald-400 rounded-full hp-bar-transition" style="width: 0%"></div>
+            </div>
+
+            <div class="flex justify-between items-center text-xs text-slate-300 pt-1">
+              <div>
+                <span class="text-slate-400">全残高合計:</span>
+                <strong id="phase2Remaining" class="text-sm sm:text-base font-black text-white ml-1">3,730,789円</strong>
+              </div>
+              <div class="text-right">
+                <span class="text-slate-400">撃破済み:</span>
+                <span id="phase2Paid" class="font-bold text-sky-400 ml-1">0円</span>
+                <span class="text-slate-500 text-[11px]">/ 3,730,789円</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. EFFECTIVE PAY RAISE & CASH FLOW METER -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      
+      <!-- Card A: Effective Monthly Pay Raise (実質昇給メーター) -->
+      <div class="glass-panel rounded-2xl p-5 border border-emerald-500/30 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+            実質手取りアップ額（毎月）
+          </span>
+          <span id="defeatedCountBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
+            0 / 7 社撃破
+          </span>
+        </div>
+        <div class="flex items-baseline gap-1 my-1">
+          <span class="text-2xl sm:text-3xl font-black text-emerald-400" id="effectiveRaiseAmount">+0</span>
+          <span class="text-xs font-bold text-slate-400">円 / 月 昇給状態！</span>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed mb-3">
+          完済した会社の「毎月引き落とし額」がそのまま手元に残る実質昇給パワーです（高金利完済で最大+64,000円/月）。
+        </p>
+        <!-- Badges container -->
+        <div id="defeatedBadgesList" class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-800/80 min-h-[28px]">
+          <span class="text-[11px] text-slate-500 italic">まだ撃破した借入先はありません</span>
+        </div>
+      </div>
+
+      <!-- Card B: Monthly Interest Wasted (今月消えている利息) -->
+      <div class="glass-panel rounded-2xl p-5 border border-rose-500/30 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-rose-300 flex items-center gap-1.5">
+            <i data-lucide="flame-kindling" class="w-4 h-4"></i>
+            現在毎月取られている利息（概算）
+          </span>
+          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300">
+            1日あたり約 <span id="dailyInterestCost">0</span>円
+          </span>
+        </div>
+        <div class="flex items-baseline gap-1 my-1">
+          <span class="text-2xl sm:text-3xl font-black text-rose-400" id="monthlyInterestCost">0</span>
+          <span class="text-xs font-bold text-slate-400">円 / 月（高金利分）</span>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed mb-2">
+          初期状態（約32,681円/月）から、元本を減らしたことで毎月 <strong id="interestSavedAmount" class="text-emerald-400">0円</strong> の利息をドブに捨てずに済んでいます！
+        </p>
+        <div class="w-full bg-slate-800/80 rounded-lg px-3 py-1.5 flex items-center justify-between text-[11px]">
+          <span class="text-slate-400">追加返済10万円あたりの効果:</span>
+          <span class="font-bold text-amber-300">毎月 約1,500円 利息削減✨</span>
+        </div>
+      </div>
+
+      <!-- Card C: Emergency Buffer Pool (予備費プール管理) -->
+      <div class="glass-panel rounded-2xl p-5 border border-amber-500/30 relative overflow-hidden flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              予備費プール（生活防衛クッション）
+            </span>
+            <span id="bufferSafetyBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
+              積立中
+            </span>
+          </div>
+          <div class="flex items-baseline gap-1 my-1">
+            <span class="text-2xl sm:text-3xl font-black text-white" id="bufferPoolDisplay">0</span>
+            <span class="text-xs font-bold text-slate-400">円</span>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-relaxed mb-3">
+            自動車税（5月:約4.5万）・任意保険（3月:約2.5万）・彼女のお誕生日用。最低5〜10万円残せば超過分を返済にぶつけてOK！
+          </p>
+        </div>
+
+        <div class="flex items-center gap-1.5 pt-2 border-t border-slate-800/80">
+          <button onclick="adjustBuffer(30000)" class="flex-1 py-1.5 px-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-bold text-xs transition">
+            +3万円積立
+          </button>
+          <button onclick="adjustBuffer(10000)" class="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition">
+            +1万
+          </button>
+          <button onclick="adjustBuffer(-10000)" class="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+            -1万
+          </button>
+          <button onclick="promptBufferEdit()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition" title="金額を直接入力">
+            <i data-lucide="edit-3" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 3. SNOWBALL MONSTER TRACKER (MAIN INTERACTIVE SECTION) -->
+    <section class="space-y-4">
+      
+      <!-- Section Header & Global Monthly Deduction Button -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-700/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+              <i data-lucide="swords" class="w-5 h-5 text-amber-400"></i>
+              スノーボール・モンスター討伐リスト
+            </h2>
+            <span class="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">残高が少ない順</span>
+          </div>
+          <p class="text-xs text-slate-400">
+            毎月27日の引き落とし後は右の「最低引き落とし一括反映」をタップ！余った資金（月約13.2万〜）は<strong>最優先ターゲット1社に全集中攻撃</strong>しよう。
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+          <button onclick="openMonthlyDeductionModal()" class="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 border border-indigo-400/30 transition transform active:scale-95">
+            <i data-lucide="calendar-check-2" class="w-4 h-4"></i>
+            <span>今月の最低引き落としを一括反映（27日用）</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Monthly Simulation Alert Box (Hidden by default, shown when monthly payment applied) -->
+      <div id="monthlyBreakdownAlert" class="hidden glass-panel rounded-2xl p-4 border-2 border-indigo-500/50 bg-indigo-950/30 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-indigo-200 flex items-center gap-2">
+            <i data-lucide="info" class="w-4 h-4 text-indigo-400"></i>
+            今月の約定引き落とし（最低返済）の内訳レポート
+          </h3>
+          <button onclick="document.getElementById('monthlyBreakdownAlert').classList.add('hidden')" class="text-slate-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <p class="text-xs text-slate-300">
+          最低引き落とし額からは<strong>「今月の利息」が先に引かれ、残りだけが元本（HP）減少</strong>になります。残高が大きいレイクやプロミスがいかに利息に食われているか確認してみてください🔥
+        </p>
+        <div id="monthlyBreakdownList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs"></div>
+      </div>
+
+      <!-- Monster Cards Container -->
+      <div id="debtCardsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Populated dynamically via JS -->
+      </div>
+
+    </section>
+
+    <!-- 4. MONTHLY CASHFLOW BASELINE & HISTORY LOG -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+      
+      <!-- Left: Monthly Cashflow Blueprint (5 cols) -->
+      <div class="lg:col-span-5 glass-panel rounded-2xl p-5 border border-slate-800 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i>
+            あきとさんの毎月収支ベースライン
+          </h3>
+          <span class="text-[11px] font-semibold text-slate-400">2027年1月本格始動</span>
+        </div>
+
+        <div class="space-y-2.5 text-xs">
+          <div class="flex justify-between items-center p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/20">
+            <span class="font-bold text-emerald-300">💰 手取り月収合計（低め見積り）</span>
+            <span class="text-sm font-black text-emerald-400">380,000 円</span>
+          </div>
+          <div class="pl-3 space-y-1 text-slate-400 text-[11px]">
+            <div class="flex justify-between"><span>・本業手取り（毎月20日支給）</span><span>300,000 円</span></div>
+            <div class="flex justify-between"><span>・アルバイト手取り（毎月10日支給）</span><span>80,000 円</span></div>
+          </div>
+
+          <div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-800/70">
+            <span class="font-semibold text-slate-300">🏠 基本生活費（食費0円・超スリム）</span>
+            <span class="font-bold text-white">- 117,000 円</span>
+          </div>
+          <div class="pl-3 grid grid-cols-2 gap-x-4 gap-y-1 text-slate-400 text-[11px]">
+            <div class="flex justify-between"><span>・家賃:</span><span>49,000円</span></div>
+            <div class="flex justify-between"><span>・彼女との交際費:</span><span>30,000円</span></div>
+            <div class="flex justify-between"><span>・ガソリン代:</span><span>20,000円</span></div>
+            <div class="flex justify-between"><span>・水道光熱費:</span><span>10,000円</span></div>
+            <div class="flex justify-between"><span>・通信(楽天)+散髪:</span><span>6,000円</span></div>
+            <div class="flex justify-between"><span>・YouTube+家計簿:</span><span>2,000円</span></div>
+          </div>
+
+          <div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-800/70">
+            <span class="font-semibold text-slate-300">🛡️ 予備費プール（税金・保険・誕生日）</span>
+            <span class="font-bold text-white">- 30,000 円</span>
+          </div>
+
+          <div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-800/70">
+            <span class="font-semibold text-slate-300">🚗 マイカーローン引き落とし</span>
+            <span class="font-bold text-white" id="budgetCarMin">- 36,700 円</span>
+          </div>
+
+          <div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-800/70">
+            <span class="font-semibold text-slate-300">📉 高金利借金 最低引き落とし計</span>
+            <span class="font-bold text-rose-300" id="budgetHighInterestMin">- 64,000 円</span>
+          </div>
+
+          <div class="pt-2 border-t border-slate-700">
+            <div class="flex justify-between items-center p-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40">
+              <div>
+                <div class="font-black text-amber-300 text-xs sm:text-sm">⚔️ 毎月の追加攻撃力（繰り上げ返済原資）</div>
+                <div class="text-[10px] text-amber-200/80">※撃破した借金の引き落とし枠がここに自動加算されます！</div>
+              </div>
+              <span class="text-base sm:text-lg font-black text-amber-400" id="budgetExtraAttackPower">132,300 円</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Battle & Repayment Log (7 cols) -->
+      <div class="lg:col-span-7 glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="history" class="w-4 h-4 text-amber-400"></i>
+              返済＆討伐ヒストリーログ
+            </h3>
+            <span id="logCountBadge" class="text-xs text-slate-400">0 件の記録</span>
+          </div>
+
+          <!-- Log List -->
+          <div id="actionLogContainer" class="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+          <span>💡 データはお使いのブラウザ内に自動保存されます（外部送信なし）</span>
+          <button onclick="exportBackupJson()" class="text-amber-400 hover:underline font-semibold flex items-center gap-1">
+            <i data-lucide="download" class="w-3 h-3"></i>バックアップ保存
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: Monthly Minimum Payment Confirmation -->
+  <div id="monthlyModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="glass-panel max-w-md w-full rounded-2xl p-6 border border-indigo-500/40 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300">
+          <i data-lucide="calendar-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-black text-white">今月の最低引き落としを一括反映</h3>
+          <p class="text-xs text-slate-400">毎月27日の口座引き落とし分を自動計算します</p>
+        </div>
+      </div>
+
+      <div class="text-xs text-slate-300 space-y-2 leading-relaxed bg-slate-900/90 p-3.5 rounded-xl border border-slate-800">
+        <p>現在残高があるすべての借入先に対して、<strong>「1ヶ月分の利息」を差し引いた元本減少分</strong>を自動で反映します。</p>
+        <p class="text-amber-300 font-semibold">※同時に予備費プールへ今月分の「+30,000円」も自動積立しますか？</p>
+        <label class="flex items-center gap-2 pt-1 cursor-pointer">
+          <input type="checkbox" id="autoAddBufferCheck" checked class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-amber-500">
+          <span class="text-white font-medium">予備費プールに +30,000円 を追加する</span>
+        </label>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closeMonthlyDeductionModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">
+          キャンセル
+        </button>
+        <button onclick="executeMonthlyMinimumPayments()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition">
+          一括反映を実行する
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Manual Edit Debt Modal -->
+  <div id="editDebtModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="glass-panel max-w-md w-full rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-black text-white flex items-center gap-2">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4 text-amber-400"></i>
+          <span id="editModalDebtName">残高・条件の手動調整</span>
+        </h3>
+        <button onclick="closeEditDebtModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400">
+        日割り計算のズレなどで各社アプリの実際の残高と差が出た場合や、車のローンの正確な金利が分かった場合にここから直接上書き修正できます。
+      </p>
+
+      <input type="hidden" id="editDebtId">
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">現在の正確な借入残高（円）</label>
+          <input type="number" id="editDebtBalance" min="0" step="1" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:border-amber-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">年利（%）</label>
+            <input type="number" id="editDebtRate" min="0" max="30" step="0.1" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">毎月最低引落額（円）</label>
+            <input type="number" id="editDebtMinPay" min="0" step="100" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:border-amber-500">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closeEditDebtModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">
+          キャンセル
+        </button>
+        <button onclick="saveDebtManualEdit()" class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition">
+          保存して更新
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Reset Confirmation Modal -->
+  <div id="resetModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="glass-panel max-w-sm w-full rounded-2xl p-6 border border-red-500/40 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3 text-red-400">
+        <i data-lucide="alert-triangle" class="w-6 h-6 shrink-0"></i>
+        <h3 class="text-base font-black text-white">初期状態にリセットしますか？</h3>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        これまで入力した返済記録や残高の変動をすべてリセットし、相談時の初期残高（高金利計 2,287,618円＋車 1,443,171円）に戻します。
+      </p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeResetModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">
+          キャンセル
+        </button>
+        <button onclick="confirmResetAll()" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition">
+          リセットする
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!--MODAL 4: Buffer Direct Edit Modal -->
+  <div id="bufferModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="glass-panel max-w-sm w-full rounded-2xl p-6 border border-amber-500/40 shadow-2xl space-y-4">
+      <h3 class="text-base font-black text-white flex items-center gap-2">
+        <i data-lucide="shield" class="w-4 h-4 text-amber-400"></i>
+        予備費プール残高の直接変更
+      </h3>
+      <p class="text-xs text-slate-400">現在手元にプールできている予備費の正確な金額を入力してください。</p>
+      <input type="number" id="bufferDirectInput" min="0" step="1000" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:border-amber-500">
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="document.getElementById('bufferModal').classList.replace('flex', 'hidden')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold">キャンセル</button>
+        <button onclick="saveBufferDirect()" class="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-black">更新する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    // ==========================================
+    // 1. INITIAL DATA DEFINITION (あきとさん専用初期データ)
+    // ==========================================
+    const STORAGE_KEY = 'akito_life_rebuild_dashboard_v1';
+
+    const INITIAL_DEBTS = [
+      {
+        id: 'cashing_revo',
+        name: 'クレカ（キャッシングリボ）',
+        category: 'high',
+        priority: 1,
+        badgeText: '最優先ターゲット①',
+        initialBalance: 74128,
+        currentBalance: 74128,
+        rate: 18.0,
+        minPayment: 5000,
+        note: '残高最小！最初の追加返済で一撃消滅を狙う1社目'
+      },
+      {
+        id: 'acom',
+        name: 'アコム',
+        category: 'high',
+        priority: 2,
+        badgeText: '最優先ターゲット②',
+        initialBalance: 87017,
+        currentBalance: 87017,
+        rate: 18.0,
+        minPayment: 5000,
+        note: 'キャッシング撃破後すぐに集中攻撃して2社目撃破へ！'
+      },
+      {
+        id: 'shopping_revo',
+        name: 'クレカ（ショッピングリボ）',
+        category: 'high',
+        priority: 3,
+        badgeText: '第3ターゲット',
+        initialBalance: 291154,
+        currentBalance: 291154,
+        rate: 15.0,
+        minPayment: 8000,
+        note: 'ここまで倒せばクレカのリボ残高が完全消滅（月1.8万円昇給）'
+      },
+      {
+        id: 'seven_bank',
+        name: 'セブン銀行カードローン',
+        category: 'high',
+        priority: 4,
+        badgeText: '第4ターゲット',
+        initialBalance: 495122,
+        currentBalance: 495122,
+        rate: 15.0,
+        minPayment: 8000,
+        note: '中盤の要所。浮いた引き落とし枠も総動員して約2.5ヶ月で撃破'
+      },
+      {
+        id: 'promise',
+        name: 'プロミス',
+        category: 'high',
+        priority: 5,
+        badgeText: '第5ターゲット',
+        initialBalance: 543661,
+        currentBalance: 543661,
+        rate: 18.0,
+        minPayment: 15000,
+        note: '月15,000円の引き落とし枠！倒せば手取りが一気に跳ね上がる'
+      },
+      {
+        id: 'lake',
+        name: 'レイク',
+        category: 'high',
+        priority: 6,
+        badgeText: '高金利ラスボス',
+        initialBalance: 796536,
+        currentBalance: 796536,
+        rate: 18.0,
+        minPayment: 23000,
+        note: '最大残高のラスボス。ここを倒せば高金利借金228万円が完全消滅！'
+      },
+      {
+        id: 'car_loan',
+        name: 'マイカーローン',
+        category: 'car',
+        priority: 7,
+        badgeText: '最終フェーズ（後回しOK）',
+        initialBalance: 1443171,
+        currentBalance: 1443171,
+        rate: 4.5,
+        minPayment: 36700,
+        note: '13ヶ月後に高金利が消えた後、月20万の余力で一気に清算or軽へ乗換'
+      }
+    ];
+
+    // Default State
+    let appState = {
+      debts: JSON.parse(JSON.stringify(INITIAL_DEBTS)),
+      bufferPool: 0,
+      bgImageDataUrl: null,
+      logs: [
+        {
+          id: Date.now(),
+          timestamp: new Date().toLocaleDateString('ja-JP') + ' ' + new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'}),
+          type: 'init',
+          text: '人生再建ダッシュボードを起動！1年半の完全無借金プロジェクト始動🔥'
+        }
+      ],
+      previousSnapshot: null
+    };
+
+    // ==========================================
+    // 2. STATE PERSISTENCE & INITIALIZATION
+    // ==========================================
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.debts)) {
+            appState = parsed;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load state:', e);
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {
+        showToast('画像サイズが大きすぎるため保存できませんでした。別の画像をお試しください。', 'error');
+      }
+    }
+
+    function saveSnapshotForUndo() {
+      const copy = {
+        debts: JSON.parse(JSON.stringify(appState.debts)),
+        bufferPool: appState.bufferPool,
+        logs: JSON.parse(JSON.stringify(appState.logs))
+      };
+      appState.previousSnapshot = copy;
+    }
+
+    function undoLastAction() {
+      if (!appState.previousSnapshot) return;
+      appState.debts = appState.previousSnapshot.debts;
+      appState.bufferPool = appState.previousSnapshot.bufferPool;
+      appState.logs = appState.previousSnapshot.logs;
+      appState.previousSnapshot = null;
+      saveState();
+      renderAll();
+      showToast('直前の操作を取り消しました↩️', 'info');
+    }
+
+    // ==========================================
+    // 3. CALCULATIONS & UI RENDERING
+    // ==========================================
+    function formatYen(num) {
+      return Math.round(num).toLocaleString('ja-JP');
+    }
+
+    function renderAll() {
+      renderHeroVision();
+      renderMetricsSection();
+      renderDebtCards();
+      renderCashflowBaseline();
+      renderLogs();
+      
+      // Toggle Undo button
+      const undoBtn = document.getElementById('undoBtn');
+      if (appState.previousSnapshot) {
+        undoBtn.classList.remove('hidden');
+        undoBtn.classList.add('flex');
+      } else {
+        undoBtn.classList.add('hidden');
+        undoBtn.classList.remove('flex');
+      }
+
+      lucide.createIcons();
+    }
+
+    function renderHeroVision() {
+      const heroEl = document.getElementById('heroVisionBoard');
+      const clearBgBtn = document.getElementById('clearBgBtn');
+      const overlayEl = document.getElementById('heroOverlay');
+
+      if (appState.bgImageDataUrl) {
+        heroEl.style.backgroundImage = `url('${appState.bgImageDataUrl}')`;
+        overlayEl.className = 'absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-900/50';
+        clearBgBtn.classList.remove('hidden');
+      } else {
+        heroEl.style.backgroundImage = 'radial-gradient(circle at top right, rgba(245, 158, 11, 0.22), rgba(15, 23, 42, 0.95) 60%)';
+        overlayEl.className = 'absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-900/60';
+        clearBgBtn.classList.add('hidden');
+      }
+
+      // Phase 1 (High Interest Debts)
+      const highDebts = appState.debts.filter(d => d.category === 'high');
+      const p1Initial = highDebts.reduce((sum, d) => sum + d.initialBalance, 0);
+      const p1Remaining = highDebts.reduce((sum, d) => sum + d.currentBalance, 0);
+      const p1Paid = Math.max(0, p1Initial - p1Remaining);
+      const p1Pct = p1Initial > 0 ? Math.min(100, (p1Paid / p1Initial) * 100) : 100;
+
+      document.getElementById('phase1Percent').textContent = p1Pct.toFixed(1) + '%';
+      document.getElementById('phase1Bar').style.width = p1Pct + '%';
+      document.getElementById('phase1Remaining').textContent = formatYen(p1Remaining) + '円';
+      document.getElementById('phase1Paid').textContent = formatYen(p1Paid) + '円';
+
+      // Phase 2 (All Debts including Car)
+      const p2Initial = appState.debts.reduce((sum, d) => sum + d.initialBalance, 0);
+      const p2Remaining = appState.debts.reduce((sum, d) => sum + d.currentBalance, 0);
+      const p2Paid = Math.max(0, p2Initial - p2Remaining);
+      const p2Pct = p2Initial > 0 ? Math.min(100, (p2Paid / p2Initial) * 100) : 100;
+
+      document.getElementById('phase2Percent').textContent = p2Pct.toFixed(1) + '%';
+      document.getElementById('phase2Bar').style.width = p2Pct + '%';
+      document.getElementById('phase2Remaining').textContent = formatYen(p2Remaining) + '円';
+      document.getElementById('phase2Paid').textContent = formatYen(p2Paid) + '円';
+
+      // Dynamic Motivational Message based on Next Target
+      const activeHighDebts = highDebts.filter(d => d.currentBalance > 0).sort((a,b) => a.priority - b.priority);
+      const titleEl = document.getElementById('motivationalTitle');
+      const subEl = document.getElementById('motivationalSub');
+
+      if (p2Remaining === 0) {
+        titleEl.textContent = '🎊 完全無借金達成！！あきとさん、本当にやり遂げましたね！！';
+        subEl.textContent = 'すべての借金と車のローンがゼロになりました。バイトを卒業して、彼女と最高の未来へ進みましょう🌸';
+      } else if (p1Remaining === 0) {
+        titleEl.textContent = '🎉 高金利借金228万円を完全撃破！残すはマイカーローンのみ！';
+        subEl.textContent = '毎月64,000円の引き落としが消滅し、月20万円の自由資金が生まれています。あと数ヶ月で完全無借金です！';
+      } else if (activeHighDebts.length > 0) {
+        const currentTarget = activeHighDebts[0];
+        const defeatedHighCount = highDebts.length - activeHighDebts.length;
+        if (defeatedHighCount === 0) {
+          titleEl.textContent = '1社倒すごとに、毎月の自由と彼女との未来が近づく。';
+          subEl.textContent = `現在の最優先ターゲットは「${currentTarget.name}（残り${formatYen(currentTarget.currentBalance)}円）」。ここを倒せば毎月+${formatYen(currentTarget.minPayment)}円の実質昇給です！`;
+        } else {
+          titleEl.textContent = `現在 ${defeatedHighCount}社 撃破済み！確実に包囲網が狭まっています🔥`;
+          subEl.textContent = `次の集中攻撃ターゲットは「${currentTarget.name}（残り${formatYen(currentTarget.currentBalance)}円）」。倒せばさらに毎月+${formatYen(currentTarget.minPayment)}円手取りが増えます！`;
+        }
+      }
+    }
+
+    function renderMetricsSection() {
+      // 1. Effective Pay Raise
+      const defeatedDebts = appState.debts.filter(d => d.currentBalance === 0);
+      const totalRaise = defeatedDebts.reduce((sum, d) => sum + d.minPayment, 0);
+
+      document.getElementById('effectiveRaiseAmount').textContent = '+' + formatYen(totalRaise);
+      document.getElementById('defeatedCountBadge').textContent = `${defeatedDebts.length} / ${appState.debts.length} 社撃破`;
+
+      const badgesContainer = document.getElementById('defeatedBadgesList');
+      if (defeatedDebts.length === 0) {
+        badgesContainer.innerHTML = `<span class="text-[11px] text-slate-500 italic">1社完済するとここに「昇給勲章バッジ」が並びます✨</span>`;
+      } else {
+        badgesContainer.innerHTML = defeatedDebts.map(d => `
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold">
+            🏅 ${d.name.replace('クレカ', '')} (+${formatYen(d.minPayment)}円)
+          </span>
+        `).join('');
+      }
+
+      // 2. Monthly Interest Wasted (High-interest focus)
+      const highDebts = appState.debts.filter(d => d.category === 'high');
+      const initialMonthlyInterest = highDebts.reduce((sum, d) => sum + Math.floor(d.initialBalance * (d.rate / 100 / 12)), 0);
+      const currentMonthlyInterest = highDebts.reduce((sum, d) => sum + Math.floor(d.currentBalance * (d.rate / 100 / 12)), 0);
+      const dailyInterest = Math.floor(currentMonthlyInterest / 30);
+      const interestSaved = Math.max(0, initialMonthlyInterest - currentMonthlyInterest);
+
+      document.getElementById('monthlyInterestCost').textContent = formatYen(currentMonthlyInterest);
+      document.getElementById('dailyInterestCost').textContent = formatYen(dailyInterest);
+      document.getElementById('interestSavedAmount').textContent = formatYen(interestSaved) + '円';
+
+      // 3. Buffer Pool
+      document.getElementById('bufferPoolDisplay').textContent = formatYen(appState.bufferPool);
+      const safetyBadge = document.getElementById('bufferSafetyBadge');
+      if (appState.bufferPool >= 100000) {
+        safetyBadge.textContent = '安全圏クリア（10万円超）✨';
+        safetyBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      } else if (appState.bufferPool >= 50000) {
+        safetyBadge.textContent = '最低防衛ライン確保（5万円超）';
+        safetyBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30';
+      } else {
+        safetyBadge.textContent = '防衛資金積立中（目標5〜10万）';
+        safetyBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700';
+      }
+    }
+
+    function renderDebtCards() {
+      const container = document.getElementById('debtCardsContainer');
+      // Find first active debt to highlight as Current Target
+      const sortedDebts = [...appState.debts].sort((a, b) => a.priority - b.priority);
+      const firstActiveDebt = sortedDebts.find(d => d.currentBalance > 0);
+
+      container.innerHTML = sortedDebts.map(debt => {
+        const isDefeated = debt.currentBalance === 0;
+        const isCurrentTarget = firstActiveDebt && firstActiveDebt.id === debt.id;
+        const hpPercent = debt.initialBalance > 0 ? Math.min(100, Math.max(0, (debt.currentBalance / debt.initialBalance) * 100)) : 0;
+        const monthlyInterest = Math.floor(debt.currentBalance * (debt.rate / 100 / 12));
+        const netPrincipalFromMin = Math.max(0, debt.minPayment - monthlyInterest);
+
+        // Styling based on state
+        let cardBorder = 'border-slate-800';
+        let hpColor = 'from-rose-500 to-orange-500';
+        if (isDefeated) {
+          cardBorder = 'border-emerald-500/50 bg-emerald-950/20';
+          hpColor = 'from-emerald-500 to-teal-400';
+        } else if (isCurrentTarget) {
+          cardBorder = 'border-amber-400/80 animate-pulse-glow';
+          hpColor = 'from-amber-400 via-orange-500 to-rose-500';
+        } else if (debt.category === 'car') {
+          cardBorder = 'border-sky-500/30';
+          hpColor = 'from-sky-500 to-indigo-500';
+        }
+
+        return `
+          <div id="card-${debt.id}" class="glass-panel rounded-2xl p-5 border-2 ${cardBorder} flex flex-col justify-between transition-all duration-300 relative overflow-hidden">
+            
+            <!-- Top Header -->
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="space-y-1">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    ${isDefeated 
+                      ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-500 text-slate-950 flex items-center gap-1"><i data-lucide="PartyPopper" class="w-3 h-3"></i>完全撃破済み！</span>`
+                      : isCurrentTarget
+                        ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-400 text-slate-950 flex items-center gap-1"><i data-lucide="crosshair" class="w-3 h-3"></i>現在集中攻撃ターゲット！</span>`
+                        : `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-800 text-slate-400 border border-slate-700">${debt.badgeText}</span>`
+                    }
+                    <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-800/90 text-rose-300 border border-slate-700/80">年利 ${debt.rate}%</span>
+                    <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-800/90 text-slate-300 border border-slate-700/80">月引落 ${formatYen(debt.minPayment)}円</span>
+                  </div>
+                  <h3 class="text-base sm:text-lg font-black ${isDefeated ? 'text-emerald-300 line-through decoration-emerald-500/60' : 'text-white'}">
+                    ${debt.name}
+                  </h3>
+                </div>
+
+                <button onclick="openEditDebtModal('${debt.id}')" class="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition shrink-0" title="残高や金利を手動修正">
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <!-- HP Gauge Area -->
+              <div class="my-3 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800/90 space-y-2">
+                <div class="flex justify-between items-baseline">
+                  <span class="text-xs font-bold text-slate-400">残りHP（借入残高）</span>
+                  <div class="text-right">
+                    <span class="text-xl sm:text-2xl font-black ${isDefeated ? 'text-emerald-400' : 'text-white'}">${formatYen(debt.currentBalance)}</span>
+                    <span class="text-xs text-slate-400 font-bold">円</span>
+                    <span class="text-[11px] text-slate-500 ml-1">/ 初期 ${formatYen(debt.initialBalance)}円</span>
+                  </div>
+                </div>
+
+                <!-- HP Bar -->
+                <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                  <div class="h-full bg-gradient-to-r ${hpColor} rounded-full hp-bar-transition" style="width: ${hpPercent}%"></div>
+                </div>
+
+                <!-- Interest vs Principal Mini Info -->
+                ${!isDefeated ? `
+                  <div class="flex flex-wrap justify-between items-center text-[11px] text-slate-400 pt-1">
+                    <span>🔥 今月の発生利息: <strong class="text-rose-400">${formatYen(monthlyInterest)}円/月</strong></span>
+                    <span>📉 最低引落での元本減少: <strong class="text-sky-300">約${formatYen(netPrincipalFromMin)}円</strong></span>
+                  </div>
+                ` : `
+                  <div class="text-xs font-bold text-emerald-400 flex items-center justify-between pt-1">
+                    <span>✨ 毎月の引き落とし消滅！</span>
+                    <span>手取り実質 +${formatYen(debt.minPayment)}円/月 UP達成🎉</span>
+                  </div>
+                `}
+              </div>
+
+              <p class="text-[11px] text-slate-400 mb-3">${debt.note}</p>
+            </div>
+
+            <!-- Action Controls -->
+            ${!isDefeated ? `
+              <div class="space-y-2 pt-2 border-t border-slate-800/80">
+                <div class="flex items-center gap-1.5">
+                  <div class="relative flex-1">
+                    <input type="number" id="attack-input-${debt.id}" placeholder="追加返済額を入力 (円)" min="1" max="${debt.currentBalance}" class="w-full pl-3 pr-8 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm font-bold focus:outline-none focus:border-amber-400">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-bold">円</span>
+                  </div>
+                  <button onclick="attackDebt('${debt.id}')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-md shadow-amber-500/20 flex items-center gap-1 shrink-0 transition active:scale-95">
+                    <i data-lucide="zap" class="w-4 h-4 fill-slate-950"></i>
+                    <span>追加返済！</span>
+                  </button>
+                </div>
+
+                <!-- Quick Attack Buttons -->
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="text-[10px] text-slate-500 font-bold mr-1">クイック入力:</span>
+                  <button onclick="setQuickAttack('${debt.id}', 10000)" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold transition">+1万</button>
+                  <button onclick="setQuickAttack('${debt.id}', 50000)" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold transition">+5万</button>
+                  <button onclick="setQuickAttack('${debt.id}', 100000)" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold transition">+10万</button>
+                  <button onclick="setQuickAttack('${debt.id}', ${debt.currentBalance}, true)" class="ml-auto px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-[11px] font-bold transition">
+                    全額一撃（${formatYen(debt.currentBalance)}円）
+                  </button>
+                </div>
+              </div>
+            ` : `
+              <div class="pt-2 border-t border-emerald-500/20 flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                  <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                  討伐完了（残高 0円）
+                </span>
+                <button onclick="openEditDebtModal('${debt.id}')" class="text-[11px] text-slate-400 hover:text-white underline">
+                  残高を戻す・修正
+                </button>
+              </div>
+            `}
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderCashflowBaseline() {
+      const highDebts = appState.debts.filter(d => d.category === 'high');
+      const activeHighMin = highDebts.filter(d => d.currentBalance > 0).reduce((s, d) => s + d.minPayment, 0);
+      const carDebt = appState.debts.find(d => d.category === 'car');
+      const activeCarMin = carDebt && carDebt.currentBalance > 0 ? carDebt.minPayment : 0;
+
+      // Income 380,000 - Living 117,000 - Buffer 30,000 = 233,000 available for debt service
+      const extraAttackPower = 380000 - 117000 - 30000 - activeCarMin - activeHighMin;
+
+      document.getElementById('budgetCarMin').textContent = `- ${formatYen(activeCarMin)} 円`;
+      document.getElementById('budgetHighInterestMin').textContent = `- ${formatYen(activeHighMin)} 円`;
+      document.getElementById('budgetExtraAttackPower').textContent = `${formatYen(extraAttackPower)} 円 / 月`;
+    }
+
+    function renderLogs() {
+      const container = document.getElementById('actionLogContainer');
+      document.getElementById('logCountBadge').textContent = `${appState.logs.length} 件の記録`;
+
+      if (appState.logs.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 italic py-4 text-center">まだ履歴がありません</p>`;
+        return;
+      }
+
+      container.innerHTML = appState.logs.slice().reverse().map(log => {
+        let icon = 'check-circle';
+        let badgeColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+        if (log.type === 'defeat') {
+          icon = 'trophy';
+          badgeColor = 'text-amber-300 bg-amber-500/20 border-amber-500/40';
+        } else if (log.type === 'monthly') {
+          icon = 'calendar';
+          badgeColor = 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30';
+        } else if (log.type === 'edit') {
+          icon = 'sliders-horizontal';
+          badgeColor = 'text-sky-300 bg-sky-500/15 border-sky-500/30';
+        }
+
+        return `
+          <div class="p-3 rounded-xl bg-slate-900/90 border ${badgeColor} flex items-start gap-2.5 text-xs">
+            <i data-lucide="${icon}" class="w-4 h-4 shrink-0 mt-0.5"></i>
+            <div class="flex-1">
+              <div class="font-bold text-slate-200 leading-snug">${log.text}</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">${log.timestamp}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==========================================
+    // 4. INTERACTIVE ACTIONS (ATTACK, MONTHLY, EDIT)
+    // ==========================================
+    function setQuickAttack(debtId, amount, exact = false) {
+      const input = document.getElementById(`attack-input-${debtId}`);
+      const debt = appState.debts.find(d => d.id === debtId);
+      if (!input || !debt) return;
+
+      if (exact) {
+        input.value = debt.currentBalance;
+      } else {
+        const currentVal = parseInt(input.value || '0', 10);
+        input.value = Math.min(debt.currentBalance, currentVal + amount);
+      }
+    }
+
+    function attackDebt(debtId) {
+      const input = document.getElementById(`attack-input-${debtId}`);
+      const debt = appState.debts.find(d => d.id === debtId);
+      if (!input || !debt) return;
+
+      const payAmount = parseInt(input.value, 10);
+      if (isNaN(payAmount) || payAmount <= 0) {
+        showToast('追加返済する金額を1円以上で入力してください⚡', 'error');
+        return;
+      }
+
+      saveSnapshotForUndo();
+
+      const actualPaid = Math.min(debt.currentBalance, payAmount);
+      debt.currentBalance = Math.max(0, debt.currentBalance - actualPaid);
+
+      const nowStr = new Date().toLocaleDateString('ja-JP') + ' ' + new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'});
+
+      if (debt.currentBalance === 0) {
+        appState.logs.push({
+          id: Date.now(),
+          timestamp: nowStr,
+          type: 'defeat',
+          text: `🎉 【完全撃破】「${debt.name}」に ${formatYen(actualPaid)}円 を追加返済し、残高0円（完済）を達成！毎月の手取りが実質 +${formatYen(debt.minPayment)}円 アップしました！！`
+        });
+        triggerCelebrationConfetti();
+        showToast(`🎊 ${debt.name}を完全撃破！！毎月+${formatYen(debt.minPayment)}円の実質昇給です！`, 'success');
+      } else {
+        appState.logs.push({
+          id: Date.now(),
+          timestamp: nowStr,
+          type: 'attack',
+          text: `⚔️ 「${debt.name}」へ ${formatYen(actualPaid)}円 の追加返済（元本直撃）！残り残高は ${formatYen(debt.currentBalance)}円 に減少！`
+        });
+        showToast(`⚔️ ${debt.name}に${formatYen(actualPaid)}円のダメージ！`, 'success');
+      }
+
+      saveState();
+      renderAll();
+
+      // Animate card shake
+      const cardEl = document.getElementById(`card-${debtId}`);
+      if (cardEl) {
+        cardEl.classList.add('animate-damage');
+        setTimeout(() => cardEl.classList.remove('animate-damage'), 450);
+      }
+    }
+
+    // Monthly Minimum Payments Handler
+    function openMonthlyDeductionModal() {
+      const modal = document.getElementById('monthlyModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeMonthlyDeductionModal() {
+      const modal = document.getElementById('monthlyModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function executeMonthlyMinimumPayments() {
+      saveSnapshotForUndo();
+
+      const breakdownItems = [];
+      let totalMinPaid = 0;
+      let totalInterestTaken = 0;
+      let totalPrincipalReduced = 0;
+      let newlyDefeated = [];
+
+      appState.debts.forEach(debt => {
+        if (debt.currentBalance > 0) {
+          const interest = Math.floor(debt.currentBalance * (debt.rate / 100 / 12));
+          const actualPayment = Math.min(debt.currentBalance + interest, debt.minPayment);
+          const principalReduced = Math.max(0, actualPayment - interest);
+
+          debt.currentBalance = Math.max(0, debt.currentBalance - principalReduced);
+
+          totalMinPaid += actualPayment;
+          totalInterestTaken += interest;
+          totalPrincipalReduced += principalReduced;
+
+          breakdownItems.push({
+            name: debt.name,
+            paid: actualPayment,
+            interest: interest,
+            principal: principalReduced,
+            remaining: debt.currentBalance
+          });
+
+          if (debt.currentBalance === 0) {
+            newlyDefeated.push(debt.name);
+          }
+        }
+      });
+
+      const addBuffer = document.getElementById('autoAddBufferCheck').checked;
+      if (addBuffer) {
+        appState.bufferPool += 30000;
+      }
+
+      const nowStr = new Date().toLocaleDateString('ja-JP') + ' ' + new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'});
+      appState.logs.push({
+        id: Date.now(),
+        timestamp: nowStr,
+        type: 'monthly',
+        text: `🗓️ 今月の最低引き落としを一括反映（支払計 ${formatYen(totalMinPaid)}円 ／ うち利息 ${formatYen(totalInterestTaken)}円・元本減少 ${formatYen(totalPrincipalReduced)}円）${addBuffer ? '＋予備費3万円積立' : ''}`
+      });
+
+      closeMonthlyDeductionModal();
+      saveState();
+      renderAll();
+
+      // Render Breakdown Alert Box
+      const alertBox = document.getElementById('monthlyBreakdownAlert');
+      const listEl = document.getElementById('monthlyBreakdownList');
+      listEl.innerHTML = breakdownItems.map(item => `
+        <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between">
+          <div class="font-bold text-white truncate">${item.name}</div>
+          <div class="text-[11px] text-slate-400 mt-1 space-y-0.5">
+            <div class="flex justify-between"><span>引落額:</span><span class="text-slate-200 font-semibold">${formatYen(item.paid)}円</span></div>
+            <div class="flex justify-between"><span>うち利息:</span><span class="text-rose-400 font-semibold">-${formatYen(item.interest)}円</span></div>
+            <div class="flex justify-between border-t border-slate-800 pt-0.5"><span>実質HP減少:</span><span class="text-emerald-400 font-bold">-${formatYen(item.principal)}円</span></div>
+          </div>
+        </div>
+      `).join('');
+      alertBox.classList.remove('hidden');
+
+      if (newlyDefeated.length > 0) {
+        triggerCelebrationConfetti();
+        showToast(`🎉 引き落としにより ${newlyDefeated.join('・')} が完済されました！`, 'success');
+      } else {
+        showToast('🗓️ 今月の最低引き落とし分を反映しました！', 'info');
+      }
+    }
+
+    // Manual Edit Modal Handlers
+    function openEditDebtModal(debtId) {
+      const debt = appState.debts.find(d => d.id === debtId);
+      if (!debt) return;
+
+      document.getElementById('editDebtId').value = debt.id;
+      document.getElementById('editModalDebtName').textContent = `「${debt.name}」の手動調整`;
+      document.getElementById('editDebtBalance').value = debt.currentBalance;
+      document.getElementById('editDebtRate').value = debt.rate;
+      document.getElementById('editDebtMinPay').value = debt.minPayment;
+
+      const modal = document.getElementById('editDebtModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeEditDebtModal() {
+      const modal = document.getElementById('editDebtModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function saveDebtManualEdit() {
+      const debtId = document.getElementById('editDebtId').value;
+      const newBalance = parseInt(document.getElementById('editDebtBalance').value, 10);
+      const newRate = parseFloat(document.getElementById('editDebtRate').value);
+      const newMinPay = parseInt(document.getElementById('editDebtMinPay').value, 10);
+
+      const debt = appState.debts.find(d => d.id === debtId);
+      if (!debt || isNaN(newBalance) || newBalance < 0) return;
+
+      saveSnapshotForUndo();
+
+      const oldBalance = debt.currentBalance;
+      debt.currentBalance = newBalance;
+      if (!isNaN(newRate) && newRate >= 0) debt.rate = newRate;
+      if (!isNaN(newMinPay) && newMinPay >= 0) debt.minPayment = newMinPay;
+
+      // If user adjusted initial balance higher than initial, update initialBalance so progress bar stays sane
+      if (newBalance > debt.initialBalance) {
+        debt.initialBalance = newBalance;
+      }
+
+      const nowStr = new Date().toLocaleDateString('ja-JP') + ' ' + new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'});
+      appState.logs.push({
+        id: Date.now(),
+        timestamp: nowStr,
+        type: 'edit',
+        text: `✏️ 「${debt.name}」の残高を手動調整（${formatYen(oldBalance)}円 ➔ ${formatYen(newBalance)}円 / 年利${debt.rate}%）`
+      });
+
+      if (oldBalance > 0 && newBalance === 0) {
+        triggerCelebrationConfetti();
+      }
+
+      closeEditDebtModal();
+      saveState();
+      renderAll();
+      showToast('残高・条件を更新しました✏️', 'info');
+    }
+
+    // Buffer Pool Management
+    function adjustBuffer(delta) {
+      saveSnapshotForUndo();
+      appState.bufferPool = Math.max(0, appState.bufferPool + delta);
+      const nowStr = new Date().toLocaleDateString('ja-JP') + ' ' + new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'});
+      appState.logs.push({
+        id: Date.now(),
+        timestamp: nowStr,
+        type: 'edit',
+        text: `🛡️ 予備費プールを ${delta > 0 ? '+' + formatYen(delta) : formatYen(delta)}円 調整（現在残高: ${formatYen(appState.bufferPool)}円）`
+      });
+      saveState();
+      renderAll();
+      showToast(`予備費プール: ${formatYen(appState.bufferPool)}円`, 'info');
+    }
+
+    function promptBufferEdit() {
+      document.getElementById('bufferDirectInput').value = appState.bufferPool;
+      const modal = document.getElementById('bufferModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function saveBufferDirect() {
+      const val = parseInt(document.getElementById('bufferDirectInput').value, 10);
+      if (!isNaN(val) && val >= 0) {
+        saveSnapshotForUndo();
+        appState.bufferPool = val;
+        saveState();
+        renderAll();
+      }
+      document.getElementById('bufferModal').classList.replace('flex', 'hidden');
+    }
+
+    // Background Image Upload (Local Privacy Safe)
+    function handleBgUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        // Compress image via canvas so it fits comfortably in localStorage
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const maxW = 1200;
+          const scale = Math.min(1, maxW / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          appState.bgImageDataUrl = dataUrl;
+          saveState();
+          renderHeroVision();
+          showToast('お気に入りの背景写真を設定しました✨（端末内のみに保存）', 'success');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearBgImage() {
+      appState.bgImageDataUrl = null;
+      saveState();
+      renderHeroVision();
+      showToast('背景画像をデフォルトに戻しました', 'info');
+    }
+
+    // Reset Modal
+    function openResetModal() {
+      const modal = document.getElementById('resetModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeResetModal() {
+      const modal = document.getElementById('resetModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function confirmResetAll() {
+      const keepBg = appState.bgImageDataUrl;
+      appState = {
+        debts: JSON.parse(JSON.stringify(INITIAL_DEBTS)),
+        bufferPool: 0,
+        bgImageDataUrl: keepBg,
+        logs: [
+          {
+            id: Date.now(),
+            timestamp: new Date().toLocaleDateString('ja-JP') + ' ' + new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'}),
+            type: 'init',
+            text: 'データを初期状態にリセットしました。ここからまた一歩ずつ進みましょう🔥'
+          }
+        ],
+        previousSnapshot: null
+      };
+      saveState();
+      closeResetModal();
+      document.getElementById('monthlyBreakdownAlert').classList.add('hidden');
+      renderAll();
+      showToast('初期状態にリセットしました', 'info');
+    }
+
+    // Export JSON Backup
+    function exportBackupJson() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", `akito_rebuild_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+      showToast('バックアップファイルを保存しました💾', 'success');
+    }
+
+    // Celebratory Confetti
+    function triggerCelebrationConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 110,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+        setTimeout(() => {
+          confetti({
+            particleCount: 70,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 }
+          });
+          confetti({
+            particleCount: 70,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 }
+          });
+        }, 250);
+      }
+    }
+
+    // Toast Helper
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      let colors = 'bg-slate-800 border-slate-700 text-white';
+      if (type === 'success') colors = 'bg-emerald-950/95 border-emerald-500/60 text-emerald-200';
+      if (type === 'error') colors = 'bg-rose-950/95 border-rose-500/60 text-rose-200';
+
+      toast.className = `px-4 py-3 rounded-xl border shadow-xl text-xs font-bold transition-all duration-300 transform translate-y-2 opacity-0 ${colors}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      renderAll();
+    });
+  </script>
+</body>
+</html>

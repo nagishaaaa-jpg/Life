@@ -196,14 +196,14 @@
           <div>
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-black">
               <i data-lucide="calendar-check" class="w-3 h-3"></i>
-              <span>20日締め・翌月10日払い 自動集計</span>
+              <span id="cutoffRuleBadgeText">月末締め・翌月10日払い 自動集計</span>
             </span>
             <h2 class="text-sm font-black text-white pt-1" id="shiftPeriodTitle">給料日別 支給額＆シフト管理</h2>
           </div>
 
           <button onclick="openShiftConfigModal()" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-300 border border-amber-500/40 text-[11px] font-black flex items-center gap-1 transition shrink-0 shadow">
             <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
-            <span>基本シフト・時給設定</span>
+            <span>基本シフト・締め日設定</span>
           </button>
         </div>
 
@@ -215,7 +215,7 @@
           </button>
           <div class="text-center">
             <div id="shiftTargetMonthLabel" class="text-sm font-black text-white">2026年11月 カレンダー表示中</div>
-            <div id="shiftTargetRangeLabel" class="text-[10px] text-amber-300 font-bold">20日を境に「12/10支給」と「1/10支給」へ自動振分</div>
+            <div id="shiftTargetRangeLabel" class="text-[10px] text-amber-300 font-bold">11月1日〜11月30日出勤分 ➔ 12月10日支給</div>
           </div>
           <button onclick="changeShiftMonth(1)" class="p-1.5 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-200 flex items-center gap-1 text-xs font-bold">
             <span>翌月</span>
@@ -223,7 +223,7 @@
           </button>
         </div>
 
-        <!-- Primary Highlight: Next Month 10th Payday (Prev 21st - Current 20th) -->
+        <!-- Primary Highlight: Next Payday -->
         <div class="bg-gradient-to-br from-amber-950/60 via-slate-950 to-slate-950 p-3.5 rounded-xl border-2 border-amber-400/70 space-y-2.5 shadow-lg">
           <div class="flex items-start justify-between gap-2">
             <div class="space-y-0.5">
@@ -231,7 +231,7 @@
                 💰 12月10日(木) の給料日
               </div>
               <div class="text-[11px] font-bold text-slate-300 pt-0.5" id="paydayPeriodSubText">
-                集計期間：10月21日 〜 11月20日（バイト出勤 0回）
+                集計期間：11月1日 〜 11月30日（バイト出勤 0回）
               </div>
             </div>
             <div class="text-right">
@@ -249,7 +249,7 @@
           </div>
         </div>
 
-        <!-- Secondary Box: Following Month 10th Payday Preview (Current 21st - Next 20th) -->
+        <!-- Secondary Box: Following Month Payday Preview -->
         <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800 space-y-2">
           <div class="flex items-center justify-between gap-2">
             <div>
@@ -257,7 +257,7 @@
                 <span>🔜 翌々月 1月10日の給料日見込み</span>
               </div>
               <div class="text-[10px] text-slate-400 font-bold" id="nextPaydayPeriodSubText">
-                集計期間：11月21日 〜 12月20日（カレンダー21日以降〜）
+                集計期間：12月1日 〜 12月31日
               </div>
             </div>
             <div class="text-right">
@@ -301,7 +301,7 @@
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-500/25 border border-sky-400/50 text-sky-200 font-black">🔵 本業</span>
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-orange-500/25 border border-orange-400/50 text-orange-200 font-black">🟠 バイト</span>
           <span class="inline-flex items-center px-1.5 py-0.5 text-slate-400 font-bold">休み（文字のみ）</span>
-          <span class="text-[9px] text-amber-300/90 ml-auto font-bold">※1〜20日＝翌月10日払 / 21日〜＝翌々月10日払</span>
+          <span class="text-[9px] text-amber-300/90 ml-auto font-bold" id="calendarCutoffLegendNote">※月末締め・翌月10日払い</span>
         </div>
 
         <!-- Day of Week Header (Sun - Sat) -->
@@ -984,8 +984,48 @@
       </div>
 
       <!-- 3. Salary & Wage Parameters -->
-      <div class="bg-slate-900/95 p-3.5 rounded-xl border border-emerald-500/30 space-y-2.5 text-xs">
-        <div class="font-black text-emerald-300">💰 本業手取り＆バイト時給・手当設定</div>
+      <div class="bg-slate-900/95 p-3.5 rounded-xl border border-emerald-500/30 space-y-3 text-xs">
+        <div class="font-black text-emerald-300">💰 バイト締め日・給料日 ＆ 時給設定</div>
+
+        <!-- Cutoff Day & Payday Settings -->
+        <div class="p-2.5 rounded-xl bg-slate-950/90 border border-amber-500/30 space-y-2">
+          <div class="text-[11px] font-black text-amber-300 flex items-center gap-1">
+            <i data-lucide="calendar-clock" class="w-3.5 h-3.5"></i>
+            <span>給料の締め日・支払日設定（いつでも変更OK）</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold mb-1">締め日</label>
+              <select id="cfgCutoffDay" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-bold text-xs">
+                <option value="0">月末締め</option>
+                <option value="25">25日締め</option>
+                <option value="20">20日締め</option>
+                <option value="15">15日締め</option>
+                <option value="10">10日締め</option>
+                <option value="5">5日締め</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold mb-1">支払月</label>
+              <select id="cfgPayMonthOffset" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-bold text-xs">
+                <option value="1">翌月払い</option>
+                <option value="0">当月払い</option>
+                <option value="2">翌々月払い</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold mb-1">給料日</label>
+              <select id="cfgPayDay" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-bold text-xs">
+                <option value="5">5日</option>
+                <option value="10">10日</option>
+                <option value="15">15日</option>
+                <option value="20">20日</option>
+                <option value="25">25日</option>
+                <option value="0">末日</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
         <div class="grid grid-cols-2 gap-2.5">
           <div>
@@ -1570,7 +1610,10 @@
       mainDefaultDays: [0, 1, 2, 3, 5, 6],  // 木(4)休み、金(5)は隔週休み判定へ
       mainBiweeklyOffDay: 5,                // 金曜(5)を隔週休みに設定（-1で無効）
       mainBiweeklyParity: 0,                // 0 or 1 で隔週の週合わせ
-      cutoffMode: 'cutoff20',               // 'cutoff20' (前月21〜当月20) or 'calendar' (1〜末日)
+      cutoffDay: 0,                         // 0 = 月末締め (1〜28: 指定日締め)
+      payMonthOffset: 1,                    // 1 = 翌月払い, 0 = 当月払い, 2 = 翌々月払い
+      payDay: 10,                           // 10 = 10日払い (0 = 末日払い)
+      cutoffRuleVersion: 2,                 // マイグレーション用バージョン
       viewYear: new Date().getFullYear(),
       viewMonth: new Date().getMonth() + 1, // 1-12
       overrides: {},                        // { 'YYYY-MM-DD': 'both' | 'main' | 'part' | 'off' }
@@ -1847,6 +1890,19 @@ self.addEventListener('fetch', (event) => {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed && Array.isArray(parsed.debts)) {
+            const loadedShiftCfg = {
+              ...JSON.parse(JSON.stringify(INITIAL_SHIFT_CONFIG)),
+              ...(parsed.shiftConfig || {}),
+              overrides: (parsed.shiftConfig && parsed.shiftConfig.overrides) ? parsed.shiftConfig.overrides : {},
+              customHolidays: (parsed.shiftConfig && parsed.shiftConfig.customHolidays) ? parsed.shiftConfig.customHolidays : {}
+            };
+            // 旧設定（20日締め）から新しい初期設定（月末締め・翌月10日払い）へ自動移行
+            if (!loadedShiftCfg.cutoffRuleVersion || loadedShiftCfg.cutoffRuleVersion < 2) {
+              loadedShiftCfg.cutoffDay = 0; // 月末締め
+              loadedShiftCfg.payMonthOffset = 1; // 翌月払い
+              loadedShiftCfg.payDay = 10; // 10日払い
+              loadedShiftCfg.cutoffRuleVersion = 2;
+            }
             appState = {
               ...appState,
               ...parsed,
@@ -1854,12 +1910,7 @@ self.addEventListener('fetch', (event) => {
               specialEvents: Array.isArray(parsed.specialEvents) ? parsed.specialEvents : JSON.parse(JSON.stringify(INITIAL_SPECIAL_EVENTS)),
               freeGiftMemo: parsed.freeGiftMemo || '',
               expandedDefeatedIds: parsed.expandedDefeatedIds || [],
-              shiftConfig: {
-                ...JSON.parse(JSON.stringify(INITIAL_SHIFT_CONFIG)),
-                ...(parsed.shiftConfig || {}),
-                overrides: (parsed.shiftConfig && parsed.shiftConfig.overrides) ? parsed.shiftConfig.overrides : {},
-                customHolidays: (parsed.shiftConfig && parsed.shiftConfig.customHolidays) ? parsed.shiftConfig.customHolidays : {}
-              }
+              shiftConfig: loadedShiftCfg
             };
           }
         }
@@ -2044,22 +2095,57 @@ self.addEventListener('fetch', (event) => {
       return Math.round(earlyWage + normalWage);
     }
 
-    function getShiftPeriodRange(year, month, cutoffMode) {
-      if (cutoffMode === 'cutoff20') {
-        // Previous month 21st to Target month 20th
-        const start = new Date(year, month - 2, 21, 0, 0, 0, 0);
-        const end = new Date(year, month - 1, 20, 0, 0, 0, 0);
-        return { start, end };
-      } else {
-        // 1st to Last day of Target month
+    function getCutoffAndPaydayLabels(cfg) {
+      const cutoffDay = Number(cfg.cutoffDay ?? 0);
+      const payMonthOffset = Number(cfg.payMonthOffset ?? 1);
+      const payDay = Number(cfg.payDay ?? 10);
+
+      const cutoffLabel = cutoffDay === 0 ? '月末締め' : `${cutoffDay}日締め`;
+      const monthOffsetLabel = payMonthOffset === 0 ? '当月' : (payMonthOffset === 1 ? '翌月' : '翌々月');
+      const payDayLabel = payDay === 0 ? '末日払い' : `${payDay}日払い`;
+
+      return {
+        cutoffDay,
+        payMonthOffset,
+        payDay,
+        cutoffLabel,
+        payLabel: `${monthOffsetLabel}${payDayLabel}`,
+        fullBadgeText: `${cutoffLabel}・${monthOffsetLabel}${payDayLabel} 自動集計`
+      };
+    }
+
+    function getShiftPeriodRange(year, month, customCutoffDay = null) {
+      const cfg = appState.shiftConfig || INITIAL_SHIFT_CONFIG;
+      const cutoffDay = customCutoffDay !== null ? Number(customCutoffDay) : Number(cfg.cutoffDay ?? 0);
+
+      if (cutoffDay === 0) {
+        // 月末締め: 当月1日 〜 当月末日
         const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
         const end = new Date(year, month, 0, 0, 0, 0, 0);
+        return { start, end };
+      } else {
+        // 指定日締め (例: 20日締めなら前月21日 〜 当月20日)
+        const start = new Date(year, month - 2, cutoffDay + 1, 0, 0, 0, 0);
+        const end = new Date(year, month - 1, cutoffDay, 0, 0, 0, 0);
         return { start, end };
       }
     }
 
-    function calculatePeriodSalarySummary(year, month, cutoffMode) {
-      const { start, end } = getShiftPeriodRange(year, month, cutoffMode);
+    function getPaydayDateForPeriod(periodYear, periodMonth) {
+      const cfg = appState.shiftConfig || INITIAL_SHIFT_CONFIG;
+      const payMonthOffset = Number(cfg.payMonthOffset ?? 1);
+      const payDay = Number(cfg.payDay ?? 10);
+
+      if (payDay === 0) {
+        // 末日払い
+        return new Date(periodYear, periodMonth - 1 + payMonthOffset + 1, 0);
+      } else {
+        return new Date(periodYear, periodMonth - 1 + payMonthOffset, payDay);
+      }
+    }
+
+    function calculatePeriodSalarySummary(year, month, customCutoffDay = null) {
+      const { start, end } = getShiftPeriodRange(year, month, customCutoffDay);
       const cfg = appState.shiftConfig;
       const shiftHoursPerDay = (Number(cfg.earlyHours) || 3) + (Number(cfg.normalHours) || 1);
 
@@ -2107,56 +2193,74 @@ self.addEventListener('fetch', (event) => {
       const cfg = appState.shiftConfig;
       const y = Number(cfg.viewYear) || new Date().getFullYear();
       const m = Number(cfg.viewMonth) || (new Date().getMonth() + 1);
+      const dowNames = ['日', '月', '火', '水', '木', '金', '土'];
 
-      // 1) Next Month 10th Payday Summary (Prev Month 21st ~ Current Month 20th)
-      const currentCutoffSummary = calculatePeriodSalarySummary(y, m, 'cutoff20');
-      const s1Month = currentCutoffSummary.start.getMonth() + 1;
-      const s1Day = currentCutoffSummary.start.getDate();
-      const e1Month = currentCutoffSummary.end.getMonth() + 1;
-      const e1Day = currentCutoffSummary.end.getDate();
+      const ruleInfo = getCutoffAndPaydayLabels(cfg);
+      const badgeEl = document.getElementById('cutoffRuleBadgeText');
+      if (badgeEl) badgeEl.textContent = ruleInfo.fullBadgeText;
 
-      const payday1Date = new Date(y, m, 10); // Next month 10th
+      const legendNoteEl = document.getElementById('calendarCutoffLegendNote');
+      if (legendNoteEl) legendNoteEl.textContent = `※${ruleInfo.cutoffLabel}・${ruleInfo.payLabel}`;
+
+      // 1) Primary Payday Summary for Viewed Month (y, m)
+      const currentSummary = calculatePeriodSalarySummary(y, m);
+      const s1Month = currentSummary.start.getMonth() + 1;
+      const s1Day = currentSummary.start.getDate();
+      const e1Month = currentSummary.end.getMonth() + 1;
+      const e1Day = currentSummary.end.getDate();
+
+      const payday1Date = getPaydayDateForPeriod(y, m);
       const p1Year = payday1Date.getFullYear();
       const p1Month = payday1Date.getMonth() + 1;
+      const p1Day = payday1Date.getDate();
+      const p1Dow = dowNames[payday1Date.getDay()];
 
-      // 2) Following Month 10th Payday Summary (Current Month 21st ~ Next Month 20th)
+      // 2) Following Period Payday Summary
       const nextPeriodYear = m === 12 ? y + 1 : y;
       const nextPeriodMonth = m === 12 ? 1 : m + 1;
-      const nextCutoffSummary = calculatePeriodSalarySummary(nextPeriodYear, nextPeriodMonth, 'cutoff20');
-      const s2Month = nextCutoffSummary.start.getMonth() + 1;
-      const s2Day = nextCutoffSummary.start.getDate();
-      const e2Month = nextCutoffSummary.end.getMonth() + 1;
-      const e2Day = nextCutoffSummary.end.getDate();
+      const nextSummary = calculatePeriodSalarySummary(nextPeriodYear, nextPeriodMonth);
+      const s2Month = nextSummary.start.getMonth() + 1;
+      const s2Day = nextSummary.start.getDate();
+      const e2Month = nextSummary.end.getMonth() + 1;
+      const e2Day = nextSummary.end.getDate();
 
-      const payday2Date = new Date(nextPeriodYear, nextPeriodMonth, 10);
+      const payday2Date = getPaydayDateForPeriod(nextPeriodYear, nextPeriodMonth);
+      const p2Year = payday2Date.getFullYear();
       const p2Month = payday2Date.getMonth() + 1;
+      const p2Day = payday2Date.getDate();
+      const p2Dow = dowNames[payday2Date.getDay()];
 
       document.getElementById('shiftTargetMonthLabel').textContent = `${y}年${m}月 カレンダー表示中`;
-      document.getElementById('shiftTargetRangeLabel').textContent =
-        `1〜20日出勤分 ➔ ${p1Month}/10支給 ／ 21日以降出勤分 ➔ ${p2Month}/10支給`;
+      if (ruleInfo.cutoffDay === 0) {
+        document.getElementById('shiftTargetRangeLabel').textContent =
+          `${s1Month}/${s1Day}〜${e1Month}/${e1Day}（月末締め）➔ ${p1Month}/${p1Day}(${p1Dow}) 支給`;
+      } else {
+        document.getElementById('shiftTargetRangeLabel').textContent =
+          `1〜${ruleInfo.cutoffDay}日分 ➔ ${p1Month}/${p1Day}支給 ／ ${ruleInfo.cutoffDay + 1}日〜分 ➔ ${p2Month}/${p2Day}支給`;
+      }
 
-      // Populate Primary Payday Box (e.g. When viewing Nov, shows Dec 10th Payday)
+      // Populate Primary Payday Box (e.g. When viewing Nov, shows Dec 10th Payday for Nov 1 - Nov 30)
       document.getElementById('paydayMainBadge').textContent =
-        `💰 ${p1Year !== y ? p1Year + '年' : ''}${p1Month}月10日の給料日 支給額`;
+        `💰 ${p1Year !== y ? p1Year + '年' : ''}${p1Month}月${p1Day}日(${p1Dow}) 給料日の支給額`;
       document.getElementById('paydayPeriodSubText').textContent =
-        `集計期間：${s1Month}月${s1Day}日 〜 ${e1Month}月${e1Day}日（出勤 ${currentCutoffSummary.partTotalDays}回 / ${currentCutoffSummary.partTotalHours}h）`;
-      document.getElementById('paydayPartAmount').textContent = formatYen(currentCutoffSummary.partTotalPay);
+        `集計期間：${s1Month}月${s1Day}日 〜 ${e1Month}月${e1Day}日（出勤 ${currentSummary.partTotalDays}回 / ${currentSummary.partTotalHours}h）`;
+      document.getElementById('paydayPartAmount').textContent = formatYen(currentSummary.partTotalPay);
 
       const regWage = calcSinglePartShiftWage(false);
       const holWage = calcSinglePartShiftWage(true);
       document.getElementById('paydayPartDetailText').textContent =
-        `平日・土曜 ${currentCutoffSummary.partRegularDays}回(${formatYen(regWage)}円) / 日祝 ${currentCutoffSummary.partHolidayDays}回(${formatYen(holWage)}円)`;
+        `平日・土曜 ${currentSummary.partRegularDays}回(${formatYen(regWage)}円) / 日祝 ${currentSummary.partHolidayDays}回(${formatYen(holWage)}円)`;
       document.getElementById('paydayCombinedTotalText').textContent =
-        `本業(${formatYen(currentCutoffSummary.mainPay)}円)と合算：${formatYen(currentCutoffSummary.totalTakeHome)}円`;
+        `本業(${formatYen(currentSummary.mainPay)}円)と合算：${formatYen(currentSummary.totalTakeHome)}円`;
 
-      // Populate Secondary Payday Box (e.g. When viewing Nov, shows Jan 10th Payday for Nov 21 - Dec 20)
+      // Populate Secondary Payday Box (Following Month Preview)
       document.getElementById('nextPaydayBadge').textContent =
-        `🔜 ${p2Month}月10日の給料日 支給見込み（${m}/21〜分）`;
+        `🔜 ${p2Year !== y ? p2Year + '年' : ''}${p2Month}月${p2Day}日(${p2Dow}) の給料日見込み`;
       document.getElementById('nextPaydayPeriodSubText').textContent =
-        `集計期間：${s2Month}月${s2Day}日 〜 ${e2Month}月${e2Day}日（出勤 ${nextCutoffSummary.partTotalDays}回 / ${nextCutoffSummary.partTotalHours}h）`;
-      document.getElementById('nextPaydayPartAmount').textContent = `${formatYen(nextCutoffSummary.partTotalPay)} 円`;
+        `集計期間：${s2Month}月${s2Day}日 〜 ${e2Month}月${e2Day}日（出勤 ${nextSummary.partTotalDays}回 / ${nextSummary.partTotalHours}h）`;
+      document.getElementById('nextPaydayPartAmount').textContent = `${formatYen(nextSummary.partTotalPay)} 円`;
       document.getElementById('nextPaydayCombinedText').textContent =
-        `本業合算: ${formatYen(nextCutoffSummary.totalTakeHome)}円`;
+        `本業合算: ${formatYen(nextSummary.totalTakeHome)}円`;
 
       document.getElementById('tipWeekdayPay').textContent = formatYen(regWage);
       document.getElementById('tipHolidayPay').textContent = formatYen(holWage);
@@ -2166,7 +2270,6 @@ self.addEventListener('fetch', (event) => {
       const todayInfo = getShiftForDate(now);
       const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
       const tomInfo = getShiftForDate(tomorrow);
-      const dowNames = ['日', '月', '火', '水', '木', '金', '土'];
 
       const describeShiftBadges = (info) => {
         const badges = [];
@@ -2196,6 +2299,9 @@ self.addEventListener('fetch', (event) => {
       const lastDay = new Date(y, m, 0);
       const startDow = firstDay.getDay();
       const daysInMonth = lastDay.getDate();
+
+      const actualCutoffDayOfThisMonth = ruleInfo.cutoffDay === 0 ? daysInMonth : Math.min(daysInMonth, ruleInfo.cutoffDay);
+      const actualPayDayOfThisMonth = ruleInfo.payDay === 0 ? daysInMonth : Math.min(daysInMonth, ruleInfo.payDay);
 
       const todayKey = toDateKey(now.getFullYear(), now.getMonth() + 1, now.getDate());
       let html = '';
@@ -2250,16 +2356,22 @@ self.addEventListener('fetch', (event) => {
         if (dow === 0 || isHol) dateNumColor = 'text-rose-400';
         else if (dow === 6) dateNumColor = 'text-sky-400';
 
-        // Subtle distinction at the 20th cutoff boundary without any confusing orange dots
         const cellBgBorder = isToday
           ? 'ring-2 ring-amber-400 bg-slate-900 border-amber-400/50'
-          : (d <= 20 ? 'bg-slate-900/95 border-slate-800' : 'bg-slate-900/65 border-slate-800/70');
+          : (d <= actualCutoffDayOfThisMonth ? 'bg-slate-900/95 border-slate-800' : 'bg-slate-900/65 border-slate-800/70');
+
+        let topRightTag = '';
+        if (d === actualCutoffDayOfThisMonth) {
+          topRightTag = `<span class="text-[8px] font-black text-amber-300 bg-amber-500/20 px-1 rounded leading-tight">締</span>`;
+        } else if (d === actualPayDayOfThisMonth) {
+          topRightTag = `<span class="text-[8px] font-black text-emerald-300 bg-emerald-500/20 px-1 rounded leading-tight">給</span>`;
+        }
 
         html += `
           <button type="button" onclick="openDayShiftModal('${info.dateKey}')" class="min-h-[76px] p-1 rounded-xl border ${cellBgBorder} flex flex-col justify-between items-center active:scale-95 transition relative">
             <div class="w-full flex items-center justify-between px-0.5">
               <span class="text-[11px] font-black leading-none ${dateNumColor}">${d}</span>
-              ${d === 20 ? `<span class="text-[8px] font-black text-amber-300 bg-amber-500/20 px-1 rounded leading-tight">締</span>` : ''}
+              ${topRightTag}
             </div>
             ${badgesHtml}
             <div class="h-2.5 flex items-center justify-center text-[8px] font-bold ${info.hasPart ? 'text-amber-300' : 'text-slate-500'} leading-none">
@@ -2380,6 +2492,10 @@ self.addEventListener('fetch', (event) => {
       document.getElementById('cfgBiweeklyDay').value = String(cfg.mainBiweeklyOffDay ?? 5);
       document.getElementById('cfgBiweeklyParity').value = String(cfg.mainBiweeklyParity ?? 0);
 
+      document.getElementById('cfgCutoffDay').value = String(cfg.cutoffDay ?? 0);
+      document.getElementById('cfgPayMonthOffset').value = String(cfg.payMonthOffset ?? 1);
+      document.getElementById('cfgPayDay').value = String(cfg.payDay ?? 10);
+
       document.getElementById('cfgMainSalary').value = cfg.mainTakeHome ?? 300000;
       document.getElementById('cfgPartBaseWage').value = cfg.partBaseWage ?? 1200;
       document.getElementById('cfgEarlyBonus').value = cfg.earlyBonus ?? 50;
@@ -2388,6 +2504,47 @@ self.addEventListener('fetch', (event) => {
       document.getElementById('cfgNormalHours').value = cfg.normalHours ?? 1;
 
       document.getElementById('shiftConfigModal').classList.replace('hidden', 'flex');
+    }
+
+    function closeShiftConfigModal() {
+      document.getElementById('shiftConfigModal').classList.replace('flex', 'hidden');
+    }
+
+    function saveShiftConfigModal() {
+      const cfg = appState.shiftConfig;
+
+      const partDays = [];
+      document.querySelectorAll('#cfgPartDaysGroup input[type="checkbox"]').forEach(cb => {
+        if (cb.checked) partDays.push(Number(cb.value));
+      });
+
+      const mainDays = [];
+      document.querySelectorAll('#cfgMainDaysGroup input[type="checkbox"]').forEach(cb => {
+        if (cb.checked) mainDays.push(Number(cb.value));
+      });
+
+      cfg.partDefaultDays = partDays;
+      cfg.mainDefaultDays = mainDays;
+      cfg.mainBiweeklyOffDay = parseInt(document.getElementById('cfgBiweeklyDay').value, 10);
+      cfg.mainBiweeklyParity = parseInt(document.getElementById('cfgBiweeklyParity').value, 10);
+
+      cfg.cutoffDay = parseInt(document.getElementById('cfgCutoffDay').value || '0', 10);
+      cfg.payMonthOffset = parseInt(document.getElementById('cfgPayMonthOffset').value || '1', 10);
+      cfg.payDay = parseInt(document.getElementById('cfgPayDay').value || '10', 10);
+      cfg.cutoffRuleVersion = 2;
+
+      cfg.mainTakeHome = Math.max(0, parseInt(document.getElementById('cfgMainSalary').value || '300000', 10));
+      cfg.partBaseWage = Math.max(0, parseInt(document.getElementById('cfgPartBaseWage').value || '1200', 10));
+      cfg.earlyBonus = Math.max(0, parseInt(document.getElementById('cfgEarlyBonus').value || '50', 10));
+      cfg.holidayBonus = Math.max(0, parseInt(document.getElementById('cfgHolidayBonus').value || '100', 10));
+      cfg.earlyHours = Math.max(0, parseFloat(document.getElementById('cfgEarlyHours').value || '3'));
+      cfg.normalHours = Math.max(0, parseFloat(document.getElementById('cfgNormalHours').value || '1'));
+
+      closeShiftConfigModal();
+      saveState();
+      renderAll();
+      const ruleInfo = getCutoffAndPaydayLabels(cfg);
+      showToast(`⚙️ 設定を保存しました！（${ruleInfo.cutoffLabel}・${ruleInfo.payLabel}）`, 'success');
     }
 
     function closeShiftConfigModal() {
@@ -3234,7 +3391,8 @@ self.addEventListener('fetch', (event) => {
         : '';
 
       const shiftCfg = appState.shiftConfig || INITIAL_SHIFT_CONFIG;
-      const shiftSum = calculatePeriodSalarySummary(shiftCfg.viewYear, shiftCfg.viewMonth, shiftCfg.cutoffMode);
+      const shiftSum = calculatePeriodSalarySummary(shiftCfg.viewYear, shiftCfg.viewMonth);
+      const ruleInfo = getCutoffAndPaydayLabels(shiftCfg);
 
       return `【🎯 人生再建ダッシュボード進捗報告】
 📅 報告日：${todayStr}時点
@@ -3254,7 +3412,7 @@ ${debtLines}
 ・マイカーローン残高：${carDebt ? formatYen(carDebt.currentBalance) : 0} 円
 ・交際・防衛バッファ残高：${formatYen(appState.bufferPool)} 円
 
-■ シフト＆給与見込み（${shiftCfg.viewYear}年${shiftCfg.viewMonth}月度）
+■ シフト＆給与見込み（${shiftCfg.viewYear}年${shiftCfg.viewMonth}月度 / ${ruleInfo.cutoffLabel}・${ruleInfo.payLabel}）
 ・本業（${shiftSum.mainDays}日）＋バイト（${shiftSum.partTotalDays}回/${shiftSum.partTotalHours}h）：計 ${formatYen(shiftSum.totalTakeHome)} 円（内バイト ${formatYen(shiftSum.partTotalPay)} 円）
 
 ■ 特別支出・直近の予定メモ

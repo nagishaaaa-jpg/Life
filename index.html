@@ -244,7 +244,7 @@
           </div>
 
           <div class="flex items-center justify-between text-[10px] text-slate-300 bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-slate-800">
-            <span id="paydayPartDetailText">平日・土曜 0回 / 日曜・祝日 0回</span>
+            <span id="paydayPartDetailText">通常 0回 / 特別時給日 0回</span>
             <span class="text-emerald-300 font-black" id="paydayCombinedTotalText">本業(30万)と合算：300,000円</span>
           </div>
         </div>
@@ -320,12 +320,12 @@
           <!-- Populated dynamically via JS -->
         </div>
 
-        <!-- Helpful Tip about 20th Cutoff -->
+        <!-- Dynamic Wage Summary Tip -->
         <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/90 text-[10px] text-slate-400 flex items-start gap-2 leading-relaxed">
           <i data-lucide="info" class="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5"></i>
-          <div>
-            <strong class="text-slate-200">平日/土曜バイト：1回 <span id="tipWeekdayPay">4,950</span>円</strong>（6-9時1,250円×3h＋9-10時1,200円×1h）<br>
-            <strong class="text-rose-300">日曜/祝日バイト：1回 <span id="tipHolidayPay">5,350</span>円</strong>（日祝+100円UP自動適用✨）
+          <div id="wageSummaryTipBox">
+            <strong class="text-slate-200">通常バイト：1回 <span id="tipWeekdayPay">4,950</span>円</strong><br>
+            <strong class="text-rose-300">特別時給日：1回 <span id="tipHolidayPay">4,950</span>円</strong>（設定画面で自由に割増額を設定可能）
           </div>
         </div>
       </section>
@@ -662,7 +662,12 @@
               <h3 class="text-xs font-black text-white">📋 AI報告用・進捗レポート作成</h3>
               <p class="text-[10px] text-slate-300">開始日からの経過日数と各社の返済状況をワンタップでコピー</p>
             </div>
-          <div class="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-xl border border-slate-800 text-xs">
+          </div>
+          <button onclick="copyAiReportAndOpenModal()" class="px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-[11px] shrink-0 shadow">
+            コピーする
+          </button>
+        </div>
+        <div class="flex items-center justify-between bg-slate-900/90 px-3 py-2 rounded-xl border border-slate-800 text-xs">
           <span class="text-slate-300 font-bold">⏱️ 本格返済スタート日設定</span>
           <input type="date" id="startDateInputBudgetTab" onchange="handleStartDateChange(this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs font-black text-amber-300 focus:outline-none focus:border-amber-400">
         </div>
@@ -888,11 +893,11 @@
         </button>
       </div>
 
-      <!-- Holiday Flag Toggle for this specific day -->
+      <!-- Special / Holiday Wage Toggle for this specific day -->
       <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
         <div>
-          <div class="font-bold text-rose-300">🎌 祝日・特別時給日（時給+100円UP）</div>
-          <div class="text-[10px] text-slate-400">日曜・祝日は自動でONになります</div>
+          <div class="font-bold text-rose-300" id="daySpecialWageTitle">🎌 特別時給日を適用（設定割増: +0円/h）</div>
+          <div class="text-[10px] text-slate-400">ONにすると設定画面で決めた「特別割増」が加算されます</div>
         </div>
         <input type="checkbox" id="dayHolidayCheck" onchange="toggleDayHolidayOverride(this.checked)" class="w-4 h-4 accent-rose-500 rounded cursor-pointer">
       </div>
@@ -922,7 +927,7 @@
       </div>
 
       <p class="text-[11px] text-slate-300 leading-relaxed">
-        ここで設定した基本曜日がカレンダーに自動展開されます。今後シフト曜日や隔週休みが変わっても、いつでもここから変更できます✨
+        ここで設定した基本曜日や時給・特別割増額がカレンダーに自動反映されます。いつでも自由にカスタムできます✨
       </p>
 
       <!-- 1. Part-Time Basic Days -->
@@ -1037,22 +1042,25 @@
             <input type="number" id="cfgPartBaseWage" step="10" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
           </div>
           <div>
-            <label class="block text-[10px] text-slate-400 font-bold mb-1">5〜9時 早朝手当 (+円/h)</label>
-            <input type="number" id="cfgEarlyBonus" step="10" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
+            <label class="block text-[10px] text-slate-400 font-bold mb-1">早朝・時間帯手当 (+円/h)</label>
+            <input type="number" id="cfgEarlyBonus" step="10" placeholder="0" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
           </div>
           <div>
-            <label class="block text-[10px] text-slate-400 font-bold mb-1">日祝手当 (+円/h)</label>
-            <input type="number" id="cfgHolidayBonus" step="10" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
+            <label class="block text-[10px] text-rose-300 font-bold mb-1">特別割増・日祝手当 (+円/h)</label>
+            <input type="number" id="cfgHolidayBonus" step="10" placeholder="0" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-rose-500/40 text-white font-bold">
           </div>
           <div>
-            <label class="block text-[10px] text-slate-400 font-bold mb-1">早朝対象時間 (6〜9時=3h)</label>
+            <label class="block text-[10px] text-slate-400 font-bold mb-1">早朝対象時間 (h)</label>
             <input type="number" id="cfgEarlyHours" step="0.5" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
           </div>
           <div>
-            <label class="block text-[10px] text-slate-400 font-bold mb-1">通常対象時間 (9〜10時=1h)</label>
+            <label class="block text-[10px] text-slate-400 font-bold mb-1">通常対象時間 (h)</label>
             <input type="number" id="cfgNormalHours" step="0.5" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white font-bold">
           </div>
         </div>
+        <p class="text-[10px] text-slate-400 leading-relaxed">
+          ※「早朝手当」や「特別割増」を <strong class="text-white">0</strong> にすると、基本時給×合計時間だけでシンプルに計算されます。特別時給日（日祝または手動ONした日）だけ時給を上げたい場合は「特別割増」に金額を入れてください。
+        </p>
       </div>
 
       <div class="flex items-center justify-between pt-1">
@@ -1346,7 +1354,6 @@
 
     function isPinLockEnabled() {
       const val = localStorage.getItem(PIN_ENABLED_KEY);
-      // Default to true unless explicitly turned off ('false')
       return val === null ? true : val === 'true';
     }
 
@@ -1574,7 +1581,6 @@
       unlockOverlaySmoothly();
     }
 
-    // Physical keyboard support (for PC testing)
     window.addEventListener('keydown', (e) => {
       const overlay = document.getElementById('pinLockOverlay');
       if (!overlay || overlay.classList.contains('hidden')) return;
@@ -1592,7 +1598,7 @@
     // ==========================================
     const STORAGE_KEY = 'akito_life_rebuild_dashboard_v1';
 
-    // Japanese Public Holidays (2026 - 2028) for automatic +100 yen/h allowance
+    // Japanese Public Holidays (2026 - 2028) for calendar display & optional holiday bonus
     const JP_HOLIDAYS = new Set([
       '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06','2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23','2026-10-12','2026-11-03','2026-11-23',
       '2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-21','2027-03-22','2027-04-29','2027-05-03','2027-05-04','2027-05-05','2027-07-19','2027-08-11','2027-09-20','2027-09-23','2027-10-11','2027-11-03','2027-11-23',
@@ -1602,8 +1608,8 @@
     const INITIAL_SHIFT_CONFIG = {
       mainTakeHome: 300000,
       partBaseWage: 1200,
-      earlyBonus: 50,      // 5:00-9:00 +50円
-      holidayBonus: 100,   // 日祝 +100円
+      earlyBonus: 50,      // 早朝・時間帯手当 (+円/h) ※0にも設定可能
+      holidayBonus: 0,     // 特別割増・日祝手当 (+円/h) ※初期0円・自分で自由に設定可能！
       earlyHours: 3,       // 6:00-9:00 (3h)
       normalHours: 1,      // 9:00-10:00 (1h)
       partDefaultDays: [0, 1, 4, 6],        // 日(0), 月(1), 木(4), 土(6)
@@ -1613,7 +1619,7 @@
       cutoffDay: 0,                         // 0 = 月末締め (1〜28: 指定日締め)
       payMonthOffset: 1,                    // 1 = 翌月払い, 0 = 当月払い, 2 = 翌々月払い
       payDay: 10,                           // 10 = 10日払い (0 = 末日払い)
-      cutoffRuleVersion: 2,                 // マイグレーション用バージョン
+      cutoffRuleVersion: 3,                 // マイグレーション用バージョン
       viewYear: new Date().getFullYear(),
       viewMonth: new Date().getMonth() + 1, // 1-12
       overrides: {},                        // { 'YYYY-MM-DD': 'both' | 'main' | 'part' | 'off' }
@@ -1795,10 +1801,8 @@
     }
 
     function initPwaEnvironment() {
-      // Register Service Worker if sw.js exists on GitHub Pages
       if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
         navigator.serviceWorker.register('./sw.js').catch(() => {
-          // Fallback: if sw.js is not uploaded yet, dynamically attach manifest data URI
           const linkEl = document.getElementById('pwaManifestLink');
           if (linkEl) {
             const fullManifest = getManifestObject();
@@ -1808,7 +1812,6 @@
         });
       }
 
-      // Listen for Chrome native install prompt
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredInstallPrompt = e;
@@ -1896,12 +1899,15 @@ self.addEventListener('fetch', (event) => {
               overrides: (parsed.shiftConfig && parsed.shiftConfig.overrides) ? parsed.shiftConfig.overrides : {},
               customHolidays: (parsed.shiftConfig && parsed.shiftConfig.customHolidays) ? parsed.shiftConfig.customHolidays : {}
             };
-            // 旧設定（20日締め）から新しい初期設定（月末締め・翌月10日払い）へ自動移行
             if (!loadedShiftCfg.cutoffRuleVersion || loadedShiftCfg.cutoffRuleVersion < 2) {
-              loadedShiftCfg.cutoffDay = 0; // 月末締め
-              loadedShiftCfg.payMonthOffset = 1; // 翌月払い
-              loadedShiftCfg.payDay = 10; // 10日払い
-              loadedShiftCfg.cutoffRuleVersion = 2;
+              loadedShiftCfg.cutoffDay = 0;
+              loadedShiftCfg.payMonthOffset = 1;
+              loadedShiftCfg.payDay = 10;
+            }
+            if (!loadedShiftCfg.cutoffRuleVersion || loadedShiftCfg.cutoffRuleVersion < 3) {
+              // 日祝強制+100円アップを廃止し、初期値0円へ移行（以降ユーザーが自由に設定可能）
+              loadedShiftCfg.holidayBonus = 0;
+              loadedShiftCfg.cutoffRuleVersion = 3;
             }
             appState = {
               ...appState,
@@ -1914,7 +1920,6 @@ self.addEventListener('fetch', (event) => {
             };
           }
         }
-        // Always open on 'shift' tab as the 1st screen on launch!
         appState.activeTab = 'shift';
       } catch (e) {
         console.error('Failed to load state:', e);
@@ -1977,7 +1982,7 @@ self.addEventListener('fetch', (event) => {
           reportLabel: `本格開始まであと ${daysUntil}日（現在：助走・準備期間）`
         };
       } else {
-        const elapsedDays = diffDays + 1; // 開始当日を「1日目」としてカウント
+        const elapsedDays = diffDays + 1;
         const monthsApprox = (diffDays / 30.4375).toFixed(1);
         const monthText = diffDays >= 28 ? `（約${monthsApprox}ヶ月経過）` : '（初月進行中）';
         return {
@@ -2049,7 +2054,7 @@ self.addEventListener('fetch', (event) => {
       if (cfg.overrides && cfg.overrides[dateKey]) {
         const ov = cfg.overrides[dateKey];
         return {
-          type: ov, // 'both' | 'main' | 'part' | 'off'
+          type: ov,
           hasMain: ov === 'both' || ov === 'main',
           hasPart: ov === 'both' || ov === 'part',
           isOverride: true,
@@ -2063,7 +2068,6 @@ self.addEventListener('fetch', (event) => {
 
       // Bi-weekly off logic for Main Job
       if (hasMain && Number(cfg.mainBiweeklyOffDay) === dow) {
-        // Anchor date: 2026-11-01 (Sunday)
         const anchor = new Date(2026, 10, 1, 0, 0, 0, 0);
         const target = new Date(y, m - 1, d, 0, 0, 0, 0);
         const diffDays = Math.floor((target.getTime() - anchor.getTime()) / (1000 * 60 * 60 * 24));
@@ -2084,11 +2088,12 @@ self.addEventListener('fetch', (event) => {
 
     function calcSinglePartShiftWage(isHolOrSun) {
       const cfg = appState.shiftConfig;
-      const base = Number(cfg.partBaseWage) || 1200;
-      const earlyB = Number(cfg.earlyBonus) || 50;
-      const holB = isHolOrSun ? (Number(cfg.holidayBonus) || 100) : 0;
-      const earlyH = Number(cfg.earlyHours) ?? 3;
-      const normalH = Number(cfg.normalHours) ?? 1;
+      const base = cfg.partBaseWage !== undefined && cfg.partBaseWage !== '' ? Number(cfg.partBaseWage) : 1200;
+      const earlyB = cfg.earlyBonus !== undefined && cfg.earlyBonus !== '' ? Number(cfg.earlyBonus) : 50;
+      const holBonusSetting = cfg.holidayBonus !== undefined && cfg.holidayBonus !== '' ? Number(cfg.holidayBonus) : 0;
+      const holB = isHolOrSun ? holBonusSetting : 0;
+      const earlyH = cfg.earlyHours !== undefined && cfg.earlyHours !== '' ? Number(cfg.earlyHours) : 3;
+      const normalH = cfg.normalHours !== undefined && cfg.normalHours !== '' ? Number(cfg.normalHours) : 1;
 
       const earlyWage = (base + earlyB + holB) * earlyH;
       const normalWage = (base + holB) * normalH;
@@ -2119,12 +2124,10 @@ self.addEventListener('fetch', (event) => {
       const cutoffDay = customCutoffDay !== null ? Number(customCutoffDay) : Number(cfg.cutoffDay ?? 0);
 
       if (cutoffDay === 0) {
-        // 月末締め: 当月1日 〜 当月末日
         const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
         const end = new Date(year, month, 0, 0, 0, 0, 0);
         return { start, end };
       } else {
-        // 指定日締め (例: 20日締めなら前月21日 〜 当月20日)
         const start = new Date(year, month - 2, cutoffDay + 1, 0, 0, 0, 0);
         const end = new Date(year, month - 1, cutoffDay, 0, 0, 0, 0);
         return { start, end };
@@ -2137,7 +2140,6 @@ self.addEventListener('fetch', (event) => {
       const payDay = Number(cfg.payDay ?? 10);
 
       if (payDay === 0) {
-        // 末日払い
         return new Date(periodYear, periodMonth - 1 + payMonthOffset + 1, 0);
       } else {
         return new Date(periodYear, periodMonth - 1 + payMonthOffset, payDay);
@@ -2147,7 +2149,7 @@ self.addEventListener('fetch', (event) => {
     function calculatePeriodSalarySummary(year, month, customCutoffDay = null) {
       const { start, end } = getShiftPeriodRange(year, month, customCutoffDay);
       const cfg = appState.shiftConfig;
-      const shiftHoursPerDay = (Number(cfg.earlyHours) || 3) + (Number(cfg.normalHours) || 1);
+      const shiftHoursPerDay = (Number(cfg.earlyHours ?? 3)) + (Number(cfg.normalHours ?? 1));
 
       let mainDays = 0;
       let partRegularDays = 0;
@@ -2172,7 +2174,7 @@ self.addEventListener('fetch', (event) => {
 
       const partTotalDays = partRegularDays + partHolidayDays;
       const partTotalHours = partTotalDays * shiftHoursPerDay;
-      const mainPay = Number(cfg.mainTakeHome) || 300000;
+      const mainPay = cfg.mainTakeHome !== undefined ? Number(cfg.mainTakeHome) : 300000;
       const totalTakeHome = mainPay + partTotalPay;
 
       return {
@@ -2239,7 +2241,6 @@ self.addEventListener('fetch', (event) => {
           `1〜${ruleInfo.cutoffDay}日分 ➔ ${p1Month}/${p1Day}支給 ／ ${ruleInfo.cutoffDay + 1}日〜分 ➔ ${p2Month}/${p2Day}支給`;
       }
 
-      // Populate Primary Payday Box (e.g. When viewing Nov, shows Dec 10th Payday for Nov 1 - Nov 30)
       document.getElementById('paydayMainBadge').textContent =
         `💰 ${p1Year !== y ? p1Year + '年' : ''}${p1Month}月${p1Day}日(${p1Dow}) 給料日の支給額`;
       document.getElementById('paydayPeriodSubText').textContent =
@@ -2248,12 +2249,19 @@ self.addEventListener('fetch', (event) => {
 
       const regWage = calcSinglePartShiftWage(false);
       const holWage = calcSinglePartShiftWage(true);
-      document.getElementById('paydayPartDetailText').textContent =
-        `平日・土曜 ${currentSummary.partRegularDays}回(${formatYen(regWage)}円) / 日祝 ${currentSummary.partHolidayDays}回(${formatYen(holWage)}円)`;
+      const holBonusVal = Number(cfg.holidayBonus ?? 0);
+
+      if (holBonusVal > 0) {
+        document.getElementById('paydayPartDetailText').textContent =
+          `通常 ${currentSummary.partRegularDays}回(${formatYen(regWage)}円) / 特別日 ${currentSummary.partHolidayDays}回(${formatYen(holWage)}円)`;
+      } else {
+        document.getElementById('paydayPartDetailText').textContent =
+          `出勤計 ${currentSummary.partTotalDays}回（1回 ${formatYen(regWage)}円 / 特別割増 0円）`;
+      }
+
       document.getElementById('paydayCombinedTotalText').textContent =
         `本業(${formatYen(currentSummary.mainPay)}円)と合算：${formatYen(currentSummary.totalTakeHome)}円`;
 
-      // Populate Secondary Payday Box (Following Month Preview)
       document.getElementById('nextPaydayBadge').textContent =
         `🔜 ${p2Year !== y ? p2Year + '年' : ''}${p2Month}月${p2Day}日(${p2Dow}) の給料日見込み`;
       document.getElementById('nextPaydayPeriodSubText').textContent =
@@ -2262,8 +2270,20 @@ self.addEventListener('fetch', (event) => {
       document.getElementById('nextPaydayCombinedText').textContent =
         `本業合算: ${formatYen(nextSummary.totalTakeHome)}円`;
 
-      document.getElementById('tipWeekdayPay').textContent = formatYen(regWage);
-      document.getElementById('tipHolidayPay').textContent = formatYen(holWage);
+      const tipBox = document.getElementById('wageSummaryTipBox');
+      if (tipBox) {
+        if (holBonusVal > 0) {
+          tipBox.innerHTML = `
+            <strong class="text-slate-200">通常バイト：1回 ${formatYen(regWage)}円</strong>（基本時給 ${formatYen(cfg.partBaseWage)}円 / 早朝+${formatYen(cfg.earlyBonus)}円）<br>
+            <strong class="text-rose-300">特別時給日：1回 ${formatYen(holWage)}円</strong>（特別割増 +${formatYen(holBonusVal)}円/h 適用中✨）
+          `;
+        } else {
+          tipBox.innerHTML = `
+            <strong class="text-slate-200">バイト日給（全日共通）：1回 ${formatYen(regWage)}円</strong>（基本時給 ${formatYen(cfg.partBaseWage)}円 / 早朝+${formatYen(cfg.earlyBonus)}円）<br>
+            <span class="text-slate-400">※日祝の自動+100円アップはOFFです。「基本シフト・締め日設定」から特別割増を自由に設定できます。</span>
+          `;
+        }
+      }
 
       // Today & Tomorrow Quick Banner
       const now = new Date();
@@ -2306,7 +2326,6 @@ self.addEventListener('fetch', (event) => {
       const todayKey = toDateKey(now.getFullYear(), now.getMonth() + 1, now.getDate());
       let html = '';
 
-      // Leading empty cells
       for (let i = 0; i < startDow; i++) {
         html += `<div class="min-h-[76px] rounded-xl bg-slate-950/40 border border-slate-900/50"></div>`;
       }
@@ -2432,12 +2451,15 @@ self.addEventListener('fetch', (event) => {
       const dowNames = ['日', '月', '火', '水', '木', '金', '土'];
       const info = getShiftForDate(dateObj);
       const isHol = isDateHolidayOrSunday(dateObj, dateKey);
+      const holBonusVal = Number(appState.shiftConfig.holidayBonus ?? 0);
 
       document.getElementById('editingShiftDateKey').value = dateKey;
       document.getElementById('dayShiftModalTitle').textContent =
         `${parts[1]}月${parts[2]}日（${dowNames[dateObj.getDay()]}）のシフト変更`;
       document.getElementById('dayShiftModalSub').textContent =
         info.isOverride ? '現在：スポット手動変更中' : '現在：基本サイクル自動反映中';
+      document.getElementById('daySpecialWageTitle').textContent =
+        `🎌 特別時給日を適用（設定割増: +${formatYen(holBonusVal)}円/h）`;
       document.getElementById('dayHolidayCheck').checked = isHol;
 
       document.getElementById('dayShiftModal').classList.replace('hidden', 'flex');
@@ -2479,12 +2501,10 @@ self.addEventListener('fetch', (event) => {
     function openShiftConfigModal() {
       const cfg = appState.shiftConfig;
 
-      // Populate Part-time day checkboxes
       document.querySelectorAll('#cfgPartDaysGroup input[type="checkbox"]').forEach(cb => {
         cb.checked = cfg.partDefaultDays.includes(Number(cb.value));
       });
 
-      // Populate Main job day checkboxes
       document.querySelectorAll('#cfgMainDaysGroup input[type="checkbox"]').forEach(cb => {
         cb.checked = cfg.mainDefaultDays.includes(Number(cb.value));
       });
@@ -2499,7 +2519,7 @@ self.addEventListener('fetch', (event) => {
       document.getElementById('cfgMainSalary').value = cfg.mainTakeHome ?? 300000;
       document.getElementById('cfgPartBaseWage').value = cfg.partBaseWage ?? 1200;
       document.getElementById('cfgEarlyBonus').value = cfg.earlyBonus ?? 50;
-      document.getElementById('cfgHolidayBonus').value = cfg.holidayBonus ?? 100;
+      document.getElementById('cfgHolidayBonus').value = cfg.holidayBonus ?? 0;
       document.getElementById('cfgEarlyHours').value = cfg.earlyHours ?? 3;
       document.getElementById('cfgNormalHours').value = cfg.normalHours ?? 1;
 
@@ -2531,55 +2551,27 @@ self.addEventListener('fetch', (event) => {
       cfg.cutoffDay = parseInt(document.getElementById('cfgCutoffDay').value || '0', 10);
       cfg.payMonthOffset = parseInt(document.getElementById('cfgPayMonthOffset').value || '1', 10);
       cfg.payDay = parseInt(document.getElementById('cfgPayDay').value || '10', 10);
-      cfg.cutoffRuleVersion = 2;
+      cfg.cutoffRuleVersion = 3;
 
-      cfg.mainTakeHome = Math.max(0, parseInt(document.getElementById('cfgMainSalary').value || '300000', 10));
-      cfg.partBaseWage = Math.max(0, parseInt(document.getElementById('cfgPartBaseWage').value || '1200', 10));
-      cfg.earlyBonus = Math.max(0, parseInt(document.getElementById('cfgEarlyBonus').value || '50', 10));
-      cfg.holidayBonus = Math.max(0, parseInt(document.getElementById('cfgHolidayBonus').value || '100', 10));
-      cfg.earlyHours = Math.max(0, parseFloat(document.getElementById('cfgEarlyHours').value || '3'));
-      cfg.normalHours = Math.max(0, parseFloat(document.getElementById('cfgNormalHours').value || '1'));
+      const mainSalRaw = document.getElementById('cfgMainSalary').value;
+      const baseWageRaw = document.getElementById('cfgPartBaseWage').value;
+      const earlyBonusRaw = document.getElementById('cfgEarlyBonus').value;
+      const holBonusRaw = document.getElementById('cfgHolidayBonus').value;
+      const earlyHoursRaw = document.getElementById('cfgEarlyHours').value;
+      const normalHoursRaw = document.getElementById('cfgNormalHours').value;
+
+      cfg.mainTakeHome = mainSalRaw !== '' ? Math.max(0, parseInt(mainSalRaw, 10)) : 300000;
+      cfg.partBaseWage = baseWageRaw !== '' ? Math.max(0, parseInt(baseWageRaw, 10)) : 1200;
+      cfg.earlyBonus = earlyBonusRaw !== '' ? Math.max(0, parseInt(earlyBonusRaw, 10)) : 0;
+      cfg.holidayBonus = holBonusRaw !== '' ? Math.max(0, parseInt(holBonusRaw, 10)) : 0;
+      cfg.earlyHours = earlyHoursRaw !== '' ? Math.max(0, parseFloat(earlyHoursRaw)) : 3;
+      cfg.normalHours = normalHoursRaw !== '' ? Math.max(0, parseFloat(normalHoursRaw)) : 1;
 
       closeShiftConfigModal();
       saveState();
       renderAll();
       const ruleInfo = getCutoffAndPaydayLabels(cfg);
       showToast(`⚙️ 設定を保存しました！（${ruleInfo.cutoffLabel}・${ruleInfo.payLabel}）`, 'success');
-    }
-
-    function closeShiftConfigModal() {
-      document.getElementById('shiftConfigModal').classList.replace('flex', 'hidden');
-    }
-
-    function saveShiftConfigModal() {
-      const cfg = appState.shiftConfig;
-
-      const partDays = [];
-      document.querySelectorAll('#cfgPartDaysGroup input[type="checkbox"]').forEach(cb => {
-        if (cb.checked) partDays.push(Number(cb.value));
-      });
-
-      const mainDays = [];
-      document.querySelectorAll('#cfgMainDaysGroup input[type="checkbox"]').forEach(cb => {
-        if (cb.checked) mainDays.push(Number(cb.value));
-      });
-
-      cfg.partDefaultDays = partDays;
-      cfg.mainDefaultDays = mainDays;
-      cfg.mainBiweeklyOffDay = parseInt(document.getElementById('cfgBiweeklyDay').value, 10);
-      cfg.mainBiweeklyParity = parseInt(document.getElementById('cfgBiweeklyParity').value, 10);
-
-      cfg.mainTakeHome = Math.max(0, parseInt(document.getElementById('cfgMainSalary').value || '300000', 10));
-      cfg.partBaseWage = Math.max(0, parseInt(document.getElementById('cfgPartBaseWage').value || '1200', 10));
-      cfg.earlyBonus = Math.max(0, parseInt(document.getElementById('cfgEarlyBonus').value || '50', 10));
-      cfg.holidayBonus = Math.max(0, parseInt(document.getElementById('cfgHolidayBonus').value || '100', 10));
-      cfg.earlyHours = Math.max(0, parseFloat(document.getElementById('cfgEarlyHours').value || '3'));
-      cfg.normalHours = Math.max(0, parseFloat(document.getElementById('cfgNormalHours').value || '1'));
-
-      closeShiftConfigModal();
-      saveState();
-      renderAll();
-      showToast('⚙️ 基本シフト・時給設定を保存しました！', 'success');
     }
 
     function clearAllShiftOverrides() {
@@ -2700,7 +2692,6 @@ self.addEventListener('fetch', (event) => {
         titleEl.textContent = `🎯 現在標的：${target.name.replace('クレカ', '')}（残${formatYen(target.currentBalance)}円）`;
       }
 
-      // Update Start Date Inputs & Elapsed Days / Reduced Total UI
       const startInput1 = document.getElementById('startDateInput');
       const startInput2 = document.getElementById('startDateInputBudgetTab');
       const currentStartVal = appState.repaymentStartDate || '2027-01-10';
